@@ -4,6 +4,7 @@ import type React from "react"
 
 import { useState, useRef, useEffect } from "react"
 import { useTaskStore } from "@/lib/store"
+import { useSettingsStore } from "@/lib/settings-store" // Added import
 import type { SubTask } from "@/lib/types"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -11,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { CheckCircle2, Circle, Plus, Trash2, Sparkles, Loader2, Pencil, Save, X } from "lucide-react"
 import { generateTaskBreakdown } from "@/lib/ai-service"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
-import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from "@dnd-kit/core"
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from "@dnd-kit/core" // Added DragEndEvent
 import {
   SortableContext,
   sortableKeyboardCoordinates,
@@ -155,6 +156,7 @@ export function SubTaskList({ taskId, subTasks }: SubTaskListProps) {
   const deleteSubTask = useTaskStore((state) => state.deleteSubTask)
   const reorderSubTasks = useTaskStore((state) => state.reorderSubTasks)
   const task = useTaskStore((state) => state.tasks.find((t) => t.id === taskId))
+  const openaiApiKey = useSettingsStore((state) => state.openaiApiKey) // Get API key
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -188,7 +190,13 @@ export function SubTaskList({ taskId, subTasks }: SubTaskListProps) {
       setIsGenerating(true)
       setError(null)
 
-      const subtasks = await generateTaskBreakdown(task.title, task.description, customPrompt)
+      if (!openaiApiKey) {
+        setError("OpenAI API key not configured. Please set it in Settings.")
+        setIsGenerating(false)
+        return
+      }
+
+      const subtasks = await generateTaskBreakdown(task.title, task.description, customPrompt, openaiApiKey) // Pass API key
 
       // Add each subtask to the task
       subtasks.forEach((subtask) => {
@@ -205,10 +213,10 @@ export function SubTaskList({ taskId, subTasks }: SubTaskListProps) {
     }
   }
 
-  const handleDragEnd = (event: any) => {
+  const handleDragEnd = (event: DragEndEvent) => { // Changed 'any' to 'DragEndEvent'
     const { active, over } = event
 
-    if (active.id !== over.id) {
+    if (over && active.id !== over.id) { // Added check for 'over' existence
       const oldIndex = subTasks.findIndex((item) => item.id === active.id)
       const newIndex = subTasks.findIndex((item) => item.id === over.id)
 

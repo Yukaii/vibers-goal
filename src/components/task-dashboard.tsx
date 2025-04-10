@@ -5,15 +5,16 @@ import { TaskList } from "./task-list"
 import { TaskDetail } from "./task-detail"
 import { TaskInput } from "./task-input"
 import { useTaskStore } from "@/lib/store"
-import { EyeIcon, EyeOffIcon, ArrowDown } from "lucide-react"
+import { EyeIcon, EyeOffIcon, ArrowDown, SettingsIcon } from "lucide-react" // Added SettingsIcon
 import { Button } from "@/components/ui/button"
 import { Toaster } from "@/components/ui/toaster"
 import { ThemeToggle } from "./theme-toggle"
+import { SettingsModal } from "./settings-modal" // Added SettingsModal import
 import { motion } from "framer-motion"
-
 export function TaskDashboard() {
   const [showCompleted, setShowCompleted] = useState(false)
   const [isFirstVisit, setIsFirstVisit] = useState(false)
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false) // Added state for modal
   const activeTaskId = useTaskStore((state) => state.activeTaskId)
   const tasks = useTaskStore((state) => state.tasks)
   const setActiveTaskId = useTaskStore((state) => state.setActiveTaskId)
@@ -36,6 +37,14 @@ export function TaskDashboard() {
           <div className="py-4">
             <div className="flex justify-end mb-4 gap-2">
               <ThemeToggle />
+              <Button // Added Settings Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsSettingsModalOpen(true)}
+                title="Settings"
+              >
+                <SettingsIcon className="h-5 w-5" />
+              </Button>
               <Button
                 variant="ghost"
                 size="icon"
@@ -90,6 +99,10 @@ export function TaskDashboard() {
       </div>
 
       <Toaster />
+      <SettingsModal // Added SettingsModal component instance
+        isOpen={isSettingsModalOpen}
+        onClose={() => setIsSettingsModalOpen(false)}
+      />
     </div>
   )
 }
