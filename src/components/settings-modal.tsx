@@ -65,7 +65,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             servers except when making requests directly to OpenAI.
           </p>
         </div>
-        <DialogFooter>
+        <DialogFooter className='gap-2'>
           <DialogClose asChild>
             <Button type="button" variant="outline">
               Cancel

@@ -9,11 +9,9 @@ export function useVoiceInput() {
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(
-    null,
-  );
-  const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
-  const [isPushToTalk, setIsPushToTalk] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null); // Ref for MediaRecorder instance
+  const [audioChunks, setAudioChunks] = useState<Blob[]>([]); // State for audio data chunks
+  const [isPushToTalk, setIsPushToTalk] = useState(false); // Flag for mobile push-to-talk UI
   const touchStartTimeRef = useRef<number | null>(null);
 
   // Detect if we're on mobile
@@ -29,15 +27,73 @@ export function useVoiceInput() {
 
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const recorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = recorder; // Store in ref
 
+      // Clear chunks at the start
       setAudioChunks([]);
 
       recorder.ondataavailable = (e) => {
-        setAudioChunks((chunks) => [...chunks, e.data]);
+        if (e.data.size > 0) {
+          // Use functional update to ensure we have the latest state
+          setAudioChunks((prevChunks) => [...prevChunks, e.data]);
+        }
+      };
+
+      // Process audio in the onstop handler
+      recorder.onstop = async () => {
+        // Use the ref to access the recorder
+        const currentRecorder = mediaRecorderRef.current;
+        if (!currentRecorder) return;
+
+        // Close stream tracks
+        for (const track of currentRecorder.stream.getTracks()) {
+          track.stop();
+        }
+
+        // Check for short tap
+        const isTooShort =
+          touchStartTimeRef.current && Date.now() - touchStartTimeRef.current < 300;
+        touchStartTimeRef.current = null;
+
+        if (isTooShort) {
+          console.log('Recording too short, discarding.');
+          setIsProcessing(false);
+          setAudioChunks([]); // Clear chunks even if short
+          return;
+        }
+
+        // Use functional update for setAudioChunks to get the latest chunks
+        // and clear them atomically after processing.
+        setAudioChunks(currentAudioChunks => {
+          if (currentAudioChunks.length > 0) {
+            console.log(`Processing ${currentAudioChunks.length} audio chunks.`);
+            // Process the audio asynchronously
+            (async () => {
+              try {
+                const audioBlob = new Blob(currentAudioChunks, { type: 'audio/webm' });
+                const text = await transcribeAudio(
+                  audioBlob,
+                  openaiApiKey ?? undefined,
+                );
+                console.log('Transcription result:', text);
+                setTranscript(text);
+              } catch (error) {
+                console.error('Error transcribing audio:', error);
+                alert('Failed to transcribe audio. Please try again.');
+              } finally {
+                // Set processing to false after transcription attempt
+                setIsProcessing(false);
+              }
+            })(); // IIAFE: Immediately Invoked Async Function Expression
+          } else {
+            console.log('No audio chunks to process.');
+            setIsProcessing(false); // Set processing to false if no chunks
+          }
+          return []; // Always return empty array to clear the chunks state
+        });
       };
 
       recorder.start();
-      setMediaRecorder(recorder);
       setIsListening(true);
       setIsProcessing(false);
       touchStartTimeRef.current = Date.now();
@@ -46,62 +102,36 @@ export function useVoiceInput() {
       setIsProcessing(false);
       alert('Could not access microphone. Please check permissions.');
     }
-  }, []);
+  }, [openaiApiKey]);
 
-  const stopListening = useCallback(async () => {
-    if (!mediaRecorder) return;
-
-    setIsProcessing(true);
-    mediaRecorder.stop();
-    setIsListening(false);
-
-    // Close the media stream
-    for (const track of mediaRecorder.stream.getTracks()) {
-      track.stop();
-    }
-
-    // Check if this was a very short tap (less than 300ms)
-    const isTooShort =
-      touchStartTimeRef.current && Date.now() - touchStartTimeRef.current < 300;
-    touchStartTimeRef.current = null;
-
-    if (isTooShort) {
-      setIsProcessing(false);
+  const stopListening = useCallback(() => {
+    const currentRecorder = mediaRecorderRef.current;
+    if (!currentRecorder || currentRecorder.state === 'inactive') {
+      console.log('Recorder not active or not found, cannot stop.');
       return;
     }
 
-    // Wait for the last data to be collected
-    setTimeout(async () => {
-      if (audioChunks.length > 0) {
-        try {
-          const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-          // Pass the API key from settings store
-          const text = await transcribeAudio(
-            audioBlob,
-            openaiApiKey ?? undefined,
-          );
-          setTranscript(text);
-        } catch (error) {
-          console.error('Error transcribing audio:', error);
-          alert('Failed to transcribe audio. Please try again.');
-        } finally {
-          setIsProcessing(false);
-        }
-      } else {
-        setIsProcessing(false);
-      }
-    }, 500);
-  }, [mediaRecorder, audioChunks, openaiApiKey]); // Added openaiApiKey dependency
+    console.log('Stopping listening...');
+    // Set states for UI feedback; actual processing happens in onstop
+    setIsListening(false);
+    setIsProcessing(true);
 
+    // Stop the recorder, triggering the 'onstop' handler
+    currentRecorder.stop();
+  }, []);
+
+  // Cleanup effect to stop recorder tracks on unmount
   useEffect(() => {
     return () => {
-      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-        for (const track of mediaRecorder.stream.getTracks()) {
+      const currentRecorder = mediaRecorderRef.current;
+      if (currentRecorder && currentRecorder.state !== 'inactive') {
+        console.log('Cleaning up media recorder stream tracks.');
+        for (const track of currentRecorder.stream.getTracks()) {
           track.stop();
         }
       }
     };
-  }, [mediaRecorder]);
+  }, []);
 
   return {
     isListening,
