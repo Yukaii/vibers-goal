@@ -73,45 +73,48 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               placeholder="Enter your OpenAI API key"
               className="col-span-3"
             />
+             <p className="text-xs text-muted-foreground px-1 col-start-2 col-span-3">
+               Your API key is stored locally and only used for OpenAI requests.
+             </p>
           </div>
-          <p className="text-xs text-muted-foreground px-1 col-start-2 col-span-3">
-            Your API key is stored locally and only used for OpenAI requests.
-          </p>
+
 
           {/* Voice Input Provider Selection */}
-          <div className="grid grid-cols-4 items-start gap-4 pt-4">
+          <div className="grid grid-cols-4 items-start gap-x-4 gap-y-2 pt-4"> {/* Use gap-x-4 and gap-y-2 */}
             <Label className="text-right col-span-1 pt-2">Voice Input</Label>
-            <RadioGroup
-              value={selectedProvider}
-              onValueChange={(value) =>
-                setSelectedProvider(value as VoiceInputProvider)
-              }
-              className="col-span-3 flex flex-col space-y-2"
-            >
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="auto" id="r-auto" />
-                <Label htmlFor="r-auto" className="font-normal">
-                  Auto (OpenAI if key set, else Web Speech)
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="openai" id="r-openai" />
-                <Label htmlFor="r-openai" className="font-normal">
-                  OpenAI (Requires API Key)
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="webspeech" id="r-webspeech" />
-                <Label htmlFor="r-webspeech" className="font-normal">
-                  Web Speech API (Browser Built-in)
-                </Label>
-              </div>
-            </RadioGroup>
+            <div className="col-span-3"> {/* Wrap RadioGroup and description */}
+              <RadioGroup
+                value={selectedProvider}
+                onValueChange={(value) =>
+                  setSelectedProvider(value as VoiceInputProvider)
+                }
+                className="flex flex-col space-y-2"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="auto" id="r-auto" />
+                  <Label htmlFor="r-auto" className="font-normal">
+                    Auto (OpenAI if key set, else Web Speech)
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="openai" id="r-openai" />
+                  <Label htmlFor="r-openai" className="font-normal">
+                    OpenAI (Requires API Key)
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="webspeech" id="r-webspeech" />
+                  <Label htmlFor="r-webspeech" className="font-normal">
+                    Web Speech API (Browser Built-in)
+                  </Label>
+                </div>
+              </RadioGroup>
+              <p className="text-xs text-muted-foreground pt-2"> {/* Indent description under RadioGroup */}
+                Web Speech API support varies by browser. Accuracy may differ from OpenAI.
+              </p>
+            </div>
           </div>
-          <p className="text-xs text-muted-foreground px-1 col-start-2 col-span-3">
-            Web Speech API support varies by browser. Accuracy may differ from
-            OpenAI.
-          </p>
+          {/* Removed the standalone p tag from here */}
         </div>
         <DialogFooter className="gap-2">
           <DialogClose asChild>
