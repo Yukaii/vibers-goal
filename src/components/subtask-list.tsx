@@ -112,7 +112,7 @@ function SubTaskItem({ taskId, subTask, onDelete, onToggle }: SubTaskItemProps) 
       ) : (
         <>
           <span
-            className={`flex-1 ${subTask.completed ? "line-through text-muted-foreground" : ""}`}
+            className={`flex-1 text-left ${subTask.completed ? "line-through text-muted-foreground" : ""}`}
             onClick={handleStartEditing}
             {...attributes}
             {...listeners}
