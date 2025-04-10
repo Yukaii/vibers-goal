@@ -1,9 +1,11 @@
 'use client';
 
 import { transcribeAudio } from '@/lib/ai-service';
+import { useSettingsStore } from '@/lib/settings-store';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 export function useVoiceInput() {
+  const { openaiApiKey } = useSettingsStore();
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -73,7 +75,8 @@ export function useVoiceInput() {
       if (audioChunks.length > 0) {
         try {
           const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-          const text = await transcribeAudio(audioBlob);
+          // Pass the API key from settings store
+          const text = await transcribeAudio(audioBlob, openaiApiKey ?? undefined);
           setTranscript(text);
         } catch (error) {
           console.error('Error transcribing audio:', error);
@@ -85,7 +88,7 @@ export function useVoiceInput() {
         setIsProcessing(false);
       }
     }, 500);
-  }, [mediaRecorder, audioChunks]);
+  }, [mediaRecorder, audioChunks, openaiApiKey]); // Added openaiApiKey dependency
 
   useEffect(() => {
     return () => {

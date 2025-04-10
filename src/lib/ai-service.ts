@@ -1,22 +1,57 @@
 'use server';
 
 import { createOpenAI } from '@ai-sdk/openai';
-import { generateText } from 'ai';
+import { generateText, experimental_transcribe as transcribe } from 'ai';
 
-// We'll use the API key passed from the client
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export async function transcribeAudio(_audioBlob: Blob): Promise<string> {
-  // This is a mock implementation for the MVP
-  // In a real implementation, you would use OpenAI's Whisper API
-  // or another speech-to-text service
+export async function transcribeAudio(
+  audioBlob: Blob,
+  apiKey?: string,
+): Promise<string> {
+  try {
+    if (!apiKey) {
+      throw new Error(
+        'OpenAI API key not found. Please configure it in settings.',
+      );
+    }
 
-  console.log('Transcribing audio...');
+    const openai = createOpenAI({ apiKey });
 
-  // Simulate a delay for the transcription process
-  await new Promise((resolve) => setTimeout(resolve, 1000));
+    console.log('Transcribing audio with Whisper...');
 
-  // Return a mock response for now
-  return 'Add milk to the shopping list';
+    // Convert Blob to ArrayBuffer for the AI SDK
+    const audioBuffer = await audioBlob.arrayBuffer();
+
+    const { text } = await transcribe({
+      model: openai.transcription('whisper-1'),
+      audio: audioBuffer,
+      // mimeType might be inferred or not needed for common formats
+      // Optional: Add prompt for context or specific terms
+      // prompt: 'The user is likely talking about tasks or reminders.',
+    });
+
+    console.log('Transcription result:', text);
+    return text;
+  } catch (error) {
+    console.error('Error transcribing audio:', error);
+    // Check if the error is an APIError and provide more specific feedback if possible
+    if (error instanceof Error && error.name === 'APIError') {
+      try {
+        const errorDetails = JSON.parse(error.message);
+        if (errorDetails?.error?.message) {
+          throw new Error(
+            `Failed to transcribe audio: ${errorDetails.error.message}`,
+          );
+        }
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      } catch (_parseError) {
+        throw new Error(`Failed to transcribe audio: ${error.message}`);
+      }
+    }
+    // Generic fallback error
+    throw new Error(
+      'Failed to transcribe audio due to an unexpected error.',
+    );
+  }
 }
 
 export async function generateTaskBreakdown(
