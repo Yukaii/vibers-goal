@@ -1,34 +1,17 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+// import { useState } from 'react' // No longer needed
+// import reactLogo from './assets/react.svg' // No longer needed
+// import viteLogo from '/vite.svg' // No longer needed
+import './App.css' // Keep existing App styles if any
+import { ThemeProvider } from "@/components/theme-provider"
+import { TaskDashboard } from "@/components/task-dashboard" // Assuming this is the main component
 
 function App() {
-  const [count, setCount] = useState(0)
+  // const [count, setCount] = useState(0) // No longer needed
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+      <TaskDashboard />
+    </ThemeProvider>
   )
 }
 
