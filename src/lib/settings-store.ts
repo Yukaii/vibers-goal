@@ -1,9 +1,9 @@
-import { create } from "zustand"
-import { persist, createJSONStorage } from "zustand/middleware"
+import { create } from 'zustand';
+import { createJSONStorage, persist } from 'zustand/middleware';
 
 interface SettingsState {
-  openaiApiKey: string | null
-  setOpenaiApiKey: (key: string | null) => void
+  openaiApiKey: string | null;
+  setOpenaiApiKey: (key: string | null) => void;
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -13,8 +13,8 @@ export const useSettingsStore = create<SettingsState>()(
       setOpenaiApiKey: (key) => set({ openaiApiKey: key }),
     }),
     {
-      name: "settings-storage", // name of the item in the storage (must be unique)
+      name: 'settings-storage', // name of the item in the storage (must be unique)
       storage: createJSONStorage(() => localStorage), // (optional) by default, 'localStorage' is used
-    }
-  )
-)
+    },
+  ),
+);

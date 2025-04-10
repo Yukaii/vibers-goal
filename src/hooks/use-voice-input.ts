@@ -1,94 +1,101 @@
-"use client"
+'use client';
 
-import { useState, useEffect, useCallback, useRef } from "react"
-import { transcribeAudio } from "@/lib/ai-service"
+import { transcribeAudio } from '@/lib/ai-service';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 export function useVoiceInput() {
-  const [isListening, setIsListening] = useState(false)
-  const [transcript, setTranscript] = useState("")
-  const [isProcessing, setIsProcessing] = useState(false)
-  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null)
-  const [audioChunks, setAudioChunks] = useState<Blob[]>([])
-  const [isPushToTalk, setIsPushToTalk] = useState(false)
-  const touchStartTimeRef = useRef<number | null>(null)
+  const [isListening, setIsListening] = useState(false);
+  const [transcript, setTranscript] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(
+    null,
+  );
+  const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
+  const [isPushToTalk, setIsPushToTalk] = useState(false);
+  const touchStartTimeRef = useRef<number | null>(null);
 
   // Detect if we're on mobile
   useEffect(() => {
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
-    setIsPushToTalk(isMobile)
-  }, [])
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    setIsPushToTalk(isMobile);
+  }, []);
 
   const startListening = useCallback(async () => {
     try {
-      setIsProcessing(true)
-      setTranscript("")
+      setIsProcessing(true);
+      setTranscript('');
 
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      const recorder = new MediaRecorder(stream)
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
 
-      setAudioChunks([])
+      setAudioChunks([]);
 
       recorder.ondataavailable = (e) => {
-        setAudioChunks((chunks) => [...chunks, e.data])
-      }
+        setAudioChunks((chunks) => [...chunks, e.data]);
+      };
 
-      recorder.start()
-      setMediaRecorder(recorder)
-      setIsListening(true)
-      setIsProcessing(false)
-      touchStartTimeRef.current = Date.now()
+      recorder.start();
+      setMediaRecorder(recorder);
+      setIsListening(true);
+      setIsProcessing(false);
+      touchStartTimeRef.current = Date.now();
     } catch (error) {
-      console.error("Error accessing microphone:", error)
-      setIsProcessing(false)
-      alert("Could not access microphone. Please check permissions.")
+      console.error('Error accessing microphone:', error);
+      setIsProcessing(false);
+      alert('Could not access microphone. Please check permissions.');
     }
-  }, [])
+  }, []);
 
   const stopListening = useCallback(async () => {
-    if (!mediaRecorder) return
+    if (!mediaRecorder) return;
 
-    setIsProcessing(true)
-    mediaRecorder.stop()
-    setIsListening(false)
+    setIsProcessing(true);
+    mediaRecorder.stop();
+    setIsListening(false);
 
     // Close the media stream
-    mediaRecorder.stream.getTracks().forEach((track) => track.stop())
+    for (const track of mediaRecorder.stream.getTracks()) {
+      track.stop();
+    }
 
     // Check if this was a very short tap (less than 300ms)
-    const isTooShort = touchStartTimeRef.current && Date.now() - touchStartTimeRef.current < 300
-    touchStartTimeRef.current = null
+    const isTooShort =
+      touchStartTimeRef.current && Date.now() - touchStartTimeRef.current < 300;
+    touchStartTimeRef.current = null;
 
     if (isTooShort) {
-      setIsProcessing(false)
-      return
+      setIsProcessing(false);
+      return;
     }
 
     // Wait for the last data to be collected
     setTimeout(async () => {
       if (audioChunks.length > 0) {
         try {
-          const audioBlob = new Blob(audioChunks, { type: "audio/webm" })
-          const text = await transcribeAudio(audioBlob)
-          setTranscript(text)
+          const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+          const text = await transcribeAudio(audioBlob);
+          setTranscript(text);
         } catch (error) {
-          console.error("Error transcribing audio:", error)
-          alert("Failed to transcribe audio. Please try again.")
+          console.error('Error transcribing audio:', error);
+          alert('Failed to transcribe audio. Please try again.');
         } finally {
-          setIsProcessing(false)
+          setIsProcessing(false);
         }
       } else {
-        setIsProcessing(false)
+        setIsProcessing(false);
       }
-    }, 500)
-  }, [mediaRecorder, audioChunks])
+    }, 500);
+  }, [mediaRecorder, audioChunks]);
 
   useEffect(() => {
     return () => {
-      if (mediaRecorder && mediaRecorder.state !== "inactive") {
-        mediaRecorder.stream.getTracks().forEach((track) => track.stop())
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        for (const track of mediaRecorder.stream.getTracks()) {
+          track.stop();
+        }
       }
-    }
-  }, [mediaRecorder])
+    };
+  }, [mediaRecorder]);
 
   return {
     isListening,
@@ -97,5 +104,5 @@ export function useVoiceInput() {
     stopListening,
     isProcessing,
     isPushToTalk,
-  }
+  };
 }

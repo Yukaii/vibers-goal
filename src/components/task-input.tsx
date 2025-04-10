@@ -1,103 +1,131 @@
-"use client"
+'use client';
 
-import type React from "react"
+import type React from 'react';
 
-import { useState, useRef, useEffect } from "react"
-import { useTaskStore } from "@/lib/store"
-import type { Priority } from "@/lib/types"
-import { Mic, Send, Loader2, ArrowUpCircle, ArrowRightCircle, ArrowDownCircle } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Input } from "@/components/ui/input"
-import { cn } from "@/lib/utils"
-import { useVoiceInput } from "@/hooks/use-voice-input"
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { useVoiceInput } from '@/hooks/use-voice-input';
+import { useTaskStore } from '@/lib/store';
+import type { Priority } from '@/lib/types';
+import { cn } from '@/lib/utils';
+import {
+  ArrowDownCircle,
+  ArrowRightCircle,
+  ArrowUpCircle,
+  Loader2,
+  Mic,
+  Send,
+} from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 
 export function TaskInput() {
-  const [taskText, setTaskText] = useState("")
-  const [priority, setPriority] = useState<Priority>("medium")
-  const [open, setOpen] = useState(false)
-  const inputRef = useRef<HTMLInputElement>(null)
-  const micButtonRef = useRef<HTMLButtonElement>(null)
-  const addTask = useTaskStore((state) => state.addTask)
+  const [taskText, setTaskText] = useState('');
+  const [priority, setPriority] = useState<Priority>('medium');
+  const [open, setOpen] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const micButtonRef = useRef<HTMLButtonElement>(null);
+  const addTask = useTaskStore((state) => state.addTask);
 
-  const { isListening, transcript, startListening, stopListening, isProcessing, isPushToTalk } = useVoiceInput()
+  const {
+    isListening,
+    transcript,
+    startListening,
+    stopListening,
+    isProcessing,
+    isPushToTalk,
+  } = useVoiceInput();
 
   useEffect(() => {
     if (transcript) {
-      setTaskText(transcript)
+      setTaskText(transcript);
     }
-  }, [transcript])
+  }, [transcript]);
 
   const handleSubmit = () => {
-    const text = taskText.trim()
+    const text = taskText.trim();
     if (text) {
       // Add task but don't set it as active
-      addTask(text, priority, false)
-      setTaskText("")
+      addTask(text, priority, false);
+      setTaskText('');
     }
-  }
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      e.preventDefault()
-      handleSubmit()
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSubmit();
     }
-  }
+  };
 
   const handlePrioritySelect = (value: Priority) => {
-    setPriority(value)
-    setOpen(false) // Close the popover after selection
-  }
+    setPriority(value);
+    setOpen(false); // Close the popover after selection
+  };
 
   const handleTouchStart = (e: React.TouchEvent) => {
     if (isPushToTalk && !isListening && !isProcessing) {
-      e.preventDefault()
-      startListening()
+      e.preventDefault();
+      startListening();
     }
-  }
+  };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
     if (isPushToTalk && isListening) {
-      e.preventDefault()
-      stopListening()
+      e.preventDefault();
+      stopListening();
     }
-  }
+  };
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (!isPushToTalk && !isListening && !isProcessing) {
-      startListening()
+      startListening();
     }
-  }
+  };
 
   const handleMouseUp = (e: React.MouseEvent) => {
     if (!isPushToTalk && isListening) {
-      stopListening()
+      stopListening();
     }
-  }
+  };
 
   const handleClick = (e: React.MouseEvent) => {
     if (!isPushToTalk) {
-      e.preventDefault() // Prevent default click behavior for non-push-to-talk
+      e.preventDefault(); // Prevent default click behavior for non-push-to-talk
     }
-  }
+  };
 
-  const priorityOptions: { value: Priority; label: string; color: string; icon: React.ReactNode }[] = [
-    { value: "low", label: "Low", color: "bg-green-500", icon: <ArrowDownCircle className="h-4 w-4 text-green-500" /> },
+  const priorityOptions: {
+    value: Priority;
+    label: string;
+    color: string;
+    icon: React.ReactNode;
+  }[] = [
     {
-      value: "medium",
-      label: "Medium",
-      color: "bg-amber-500",
+      value: 'low',
+      label: 'Low',
+      color: 'bg-green-500',
+      icon: <ArrowDownCircle className="h-4 w-4 text-green-500" />,
+    },
+    {
+      value: 'medium',
+      label: 'Medium',
+      color: 'bg-amber-500',
       icon: <ArrowRightCircle className="h-4 w-4 text-amber-500" />,
     },
     {
-      value: "high",
-      label: "High",
-      color: "bg-destructive",
+      value: 'high',
+      label: 'High',
+      color: 'bg-destructive',
       icon: <ArrowUpCircle className="h-4 w-4 text-destructive" />,
     },
-  ]
+  ];
 
-  const currentPriority = priorityOptions.find((p) => p.value === priority)
+  const currentPriority = priorityOptions.find((p) => p.value === priority);
 
   return (
     <div className="flex items-center gap-2">
@@ -111,10 +139,11 @@ export function TaskInput() {
           <div className="space-y-1">
             {priorityOptions.map((option) => (
               <button
+                type="button"
                 key={option.value}
                 className={cn(
-                  "w-full flex items-center px-2 py-1.5 rounded-md text-sm",
-                  priority === option.value ? "bg-accent" : "hover:bg-muted",
+                  'w-full flex items-center px-2 py-1.5 rounded-md text-sm',
+                  priority === option.value ? 'bg-accent' : 'hover:bg-muted',
                 )}
                 onClick={() => handlePrioritySelect(option.value)}
               >
@@ -142,9 +171,9 @@ export function TaskInput() {
             variant="ghost"
             size="icon"
             className={cn(
-              "h-8 w-8 transition-all",
-              isListening && "bg-red-100 dark:bg-red-900 text-red-500",
-              isPushToTalk && isListening && "scale-125",
+              'h-8 w-8 transition-all',
+              isListening && 'bg-red-100 dark:bg-red-900 text-red-500',
+              isPushToTalk && isListening && 'scale-125',
             )}
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
@@ -152,12 +181,12 @@ export function TaskInput() {
             onMouseUp={handleMouseUp}
             onClick={handleClick}
             disabled={isProcessing}
-            aria-label={isPushToTalk ? "Push to talk" : "Toggle microphone"}
+            aria-label={isPushToTalk ? 'Push to talk' : 'Toggle microphone'}
           >
             {isProcessing ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-              <Mic className={cn("h-4 w-4", isListening && "text-red-500")} />
+              <Mic className={cn('h-4 w-4', isListening && 'text-red-500')} />
             )}
           </Button>
 
@@ -178,8 +207,8 @@ export function TaskInput() {
           <div className="bg-background/90 backdrop-blur-sm border rounded-full px-4 py-2 shadow-lg">
             <div className="flex items-center gap-2">
               <div className="relative">
-                <div className="absolute inset-0 rounded-full bg-red-500/20 animate-ping"></div>
-                <div className="relative h-3 w-3 rounded-full bg-red-500"></div>
+                <div className="absolute inset-0 rounded-full bg-red-500/20 animate-ping" />
+                <div className="relative h-3 w-3 rounded-full bg-red-500" />
               </div>
               <span className="text-sm font-medium">Recording...</span>
             </div>
@@ -187,5 +216,5 @@ export function TaskInput() {
         </div>
       )}
     </div>
-  )
+  );
 }

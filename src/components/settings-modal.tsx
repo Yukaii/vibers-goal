@@ -1,44 +1,44 @@
-"use client"
+'use client';
 
-import { useState, useEffect } from "react"
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
+  DialogClose,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
-  DialogClose,
-} from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { useSettingsStore } from "@/lib/settings-store"
-import { useToast } from "@/components/ui/use-toast"
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/components/ui/use-toast';
+import { useSettingsStore } from '@/lib/settings-store';
+import { useEffect, useState } from 'react';
 
 interface SettingsModalProps {
-  isOpen: boolean
-  onClose: () => void
+  isOpen: boolean;
+  onClose: () => void;
 }
 
 export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
-  const { openaiApiKey, setOpenaiApiKey } = useSettingsStore()
-  const [apiKeyInput, setApiKeyInput] = useState("")
-  const { toast } = useToast()
+  const { openaiApiKey, setOpenaiApiKey } = useSettingsStore();
+  const [apiKeyInput, setApiKeyInput] = useState('');
+  const { toast } = useToast();
 
   useEffect(() => {
     if (isOpen) {
-      setApiKeyInput(openaiApiKey || "")
+      setApiKeyInput(openaiApiKey || '');
     }
-  }, [isOpen, openaiApiKey])
+  }, [isOpen, openaiApiKey]);
 
   const handleSave = () => {
-    setOpenaiApiKey(apiKeyInput.trim() || null)
+    setOpenaiApiKey(apiKeyInput.trim() || null);
     toast({
-      title: "Settings Saved",
-      description: "Your OpenAI API key has been updated.",
-    })
-    onClose()
-  }
+      title: 'Settings Saved',
+      description: 'Your OpenAI API key has been updated.',
+    });
+    onClose();
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -61,7 +61,8 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             />
           </div>
           <p className="text-xs text-muted-foreground px-1">
-            Your API key is stored locally in your browser and never sent to our servers except when making requests directly to OpenAI.
+            Your API key is stored locally in your browser and never sent to our
+            servers except when making requests directly to OpenAI.
           </p>
         </div>
         <DialogFooter>
@@ -76,5 +77,5 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
