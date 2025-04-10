@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useTaskStore } from "@/lib/store"
 import type { Priority } from "@/lib/types"
 import { Button } from "@/components/ui/button"
@@ -15,15 +15,17 @@ import {
   ArrowUpCircle,
   ArrowRightCircle,
   ArrowDownCircle,
-  Check,
   Trash2,
-  X,
   ChevronLeft,
   XCircle,
-  Info,
 } from "lucide-react"
-import ReactMarkdown from "react-markdown"
-import remarkGfm from "remark-gfm"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select" // Import Select components
 
 interface TaskDetailProps {
   onClose: () => void
@@ -34,56 +36,76 @@ export function TaskDetail({ onClose }: TaskDetailProps) {
   const updateTask = useTaskStore((state) => state.updateTask)
   const deleteTask = useTaskStore((state) => state.deleteTask)
 
-  const [isEditing, setIsEditing] = useState(false)
-  const [editedTitle, setEditedTitle] = useState("")
-  const [editedDescription, setEditedDescription] = useState("")
-  const [editedPriority, setEditedPriority] = useState<Priority>("medium")
-  const [showMarkdownHelp, setShowMarkdownHelp] = useState(false)
+  // Local state for inline editing
+  const [currentTitle, setCurrentTitle] = useState("")
+  const [currentDescription, setCurrentDescription] = useState("")
+  const [currentPriority, setCurrentPriority] = useState<Priority>("medium")
+
+  // Sync local state when activeTask changes
+  useEffect(() => {
+    if (activeTask) {
+      setCurrentTitle(activeTask.title)
+      setCurrentDescription(activeTask.description || "")
+      setCurrentPriority(activeTask.priority)
+    }
+  }, [activeTask])
 
   if (!activeTask) return null
 
-  const handleStartEditing = () => {
-    setEditedTitle(activeTask.title)
-    setEditedDescription(activeTask.description || "")
-    setEditedPriority(activeTask.priority)
-    setIsEditing(true)
-  }
-
-  const handleSaveEdits = () => {
-    if (editedTitle.trim()) {
-      updateTask({
-        ...activeTask,
-        title: editedTitle.trim(),
-        description: editedDescription.trim() || undefined,
-        priority: editedPriority,
-      })
-      setIsEditing(false)
+  const handleTitleBlur = () => {
+    const trimmedTitle = currentTitle.trim()
+    if (trimmedTitle && trimmedTitle !== activeTask.title) {
+      updateTask({ ...activeTask, title: trimmedTitle })
+    } else if (!trimmedTitle) {
+      // Revert if title is empty
+      setCurrentTitle(activeTask.title)
     }
   }
 
-  const handleCancelEditing = () => {
-    setIsEditing(false)
+  const handleTitleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      handleTitleBlur()
+      e.currentTarget.blur() // Remove focus
+    } else if (e.key === "Escape") {
+      setCurrentTitle(activeTask.title) // Revert changes
+      e.currentTarget.blur()
+    }
   }
+
+  const handleDescriptionBlur = () => {
+    const trimmedDescription = currentDescription.trim()
+    if (trimmedDescription !== (activeTask.description || "")) {
+      updateTask({ ...activeTask, description: trimmedDescription || undefined })
+    }
+  }
+
+  const handleDescriptionKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+     if (e.key === "Escape") {
+      setCurrentDescription(activeTask.description || "") // Revert changes
+      e.currentTarget.blur()
+    }
+    // Allow saving with Cmd/Ctrl + Enter if desired in the future
+    // if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+    //   handleDescriptionBlur();
+    //   e.currentTarget.blur();
+    // }
+  }
+
+
+  const handlePriorityChange = (newPriority: Priority) => {
+    if (newPriority !== activeTask.priority) {
+      setCurrentPriority(newPriority) // Update local state immediately for responsiveness
+      updateTask({ ...activeTask, priority: newPriority })
+    }
+  }
+
 
   const handleDeleteTask = () => {
     if (confirm("Are you sure you want to delete this task?")) {
       deleteTask(activeTask.id)
+      onClose() // Close detail view after deletion
     }
   }
-
-  const getPriorityButton = (priority: Priority, label: string, icon: React.ReactNode) => (
-    <button
-      type="button"
-      className={`
-        flex items-center gap-1 px-3 py-1.5 rounded-md text-sm
-        ${editedPriority === priority ? "bg-accent" : "hover:bg-muted"}
-      `}
-      onClick={() => setEditedPriority(priority)}
-    >
-      {icon}
-      <span>{label}</span>
-    </button>
-  )
 
   return (
     <div className="h-full flex flex-col">
@@ -99,134 +121,68 @@ export function TaskDetail({ onClose }: TaskDetailProps) {
         </Button>
       </div>
 
-      <div className="p-4 border rounded-lg bg-card mb-4">
-        {isEditing ? (
-          <div className="space-y-4">
-            <Input
-              value={editedTitle}
-              onChange={(e) => setEditedTitle(e.target.value)}
-              placeholder="Task title"
-              className="text-lg font-medium"
-            />
+      {/* Task Details Card */}
+      <div className="p-4 border rounded-lg bg-card mb-4 space-y-4">
+        {/* Title Input */}
+        <div className="flex items-center justify-between">
+           <Input
+            value={currentTitle}
+            onChange={(e) => setCurrentTitle(e.target.value)}
+            onBlur={handleTitleBlur}
+            onKeyDown={handleTitleKeyDown}
+            placeholder="Task title"
+            className="text-lg font-semibold border-none outline-none focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent flex-grow mr-2 p-1 h-auto rounded-sm" // Remove focus ring and outline
+          />
+           <Button variant="ghost" size="icon" onClick={handleDeleteTask} className="text-destructive hover:text-destructive hover:bg-destructive/10">
+             <Trash2 className="h-4 w-4" />
+           </Button>
+        </div>
 
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <label className="text-sm font-medium">Description (supports markdown)</label>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 px-2 text-xs"
-                  onClick={() => setShowMarkdownHelp(!showMarkdownHelp)}
-                >
-                  <Info className="h-3 w-3 mr-1" />
-                  Markdown Help
-                </Button>
-              </div>
 
-              {showMarkdownHelp && (
-                <div className="text-xs p-2 bg-muted rounded-md mb-2">
-                  <p className="font-medium mb-1">Markdown Syntax:</p>
-                  <ul className="space-y-1 list-disc pl-4">
-                    <li>
-                      <code># Heading 1</code>
-                    </li>
-                    <li>
-                      <code>## Heading 2</code>
-                    </li>
-                    <li>
-                      <code>**bold**</code>
-                    </li>
-                    <li>
-                      <code>*italic*</code>
-                    </li>
-                    <li>
-                      <code>- list item</code>
-                    </li>
-                    <li>
-                      <code>1. numbered item</code>
-                    </li>
-                    <li>
-                      <code>[link](url)</code>
-                    </li>
-                    <li>
-                      <code>![image](url)</code>
-                    </li>
-                    <li>
-                      <code>```code block```</code>
-                    </li>
-                  </ul>
+        {/* Description Textarea */}
+        <Textarea
+          value={currentDescription}
+          onChange={(e) => setCurrentDescription(e.target.value)}
+          onBlur={handleDescriptionBlur}
+          onKeyDown={handleDescriptionKeyDown}
+          placeholder="Add a description..."
+          className="resize-none min-h-[80px] text-sm border-none outline-none focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent p-1 rounded-sm" // Remove focus ring and outline
+        />
+
+        {/* Priority Select and Creation Date */}
+        <div className="flex items-center justify-between text-sm">
+           <Select value={currentPriority} onValueChange={handlePriorityChange}>
+            {/* Make trigger look less like a button */}
+            <SelectTrigger className="w-auto h-auto p-0 border-none focus:ring-0 focus:ring-offset-0 bg-transparent text-muted-foreground hover:text-foreground">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent align="start">
+              <SelectItem value="low">
+                <div className="flex items-center gap-2">
+                  <ArrowDownCircle className="h-4 w-4 text-green-500" /> Low priority
                 </div>
-              )}
+              </SelectItem>
+              <SelectItem value="medium">
+                 <div className="flex items-center gap-2">
+                  <ArrowRightCircle className="h-4 w-4 text-amber-500" /> Medium priority
+                </div>
+              </SelectItem>
+              <SelectItem value="high">
+                 <div className="flex items-center gap-2">
+                  <ArrowUpCircle className="h-4 w-4 text-destructive" /> High priority
+                </div>
+              </SelectItem>
+            </SelectContent>
+          </Select>
 
-              <Textarea
-                value={editedDescription}
-                onChange={(e) => setEditedDescription(e.target.value)}
-                placeholder="Add a description (optional, supports markdown)"
-                className="resize-none min-h-[100px] font-mono text-sm"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Priority</label>
-              <div className="flex flex-wrap gap-2">
-                {getPriorityButton("low", "Low", <ArrowDownCircle className="h-4 w-4 text-green-500" />)}
-                {getPriorityButton("medium", "Medium", <ArrowRightCircle className="h-4 w-4 text-amber-500" />)}
-                {getPriorityButton("high", "High", <ArrowUpCircle className="h-4 w-4 text-destructive" />)}
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" size="sm" onClick={handleCancelEditing}>
-                <X className="h-4 w-4 mr-1" /> Cancel
-              </Button>
-              <Button size="sm" onClick={handleSaveEdits}>
-                <Check className="h-4 w-4 mr-1" /> Save
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <div>
-            <div className="flex items-start justify-between">
-              <h2 className="text-xl font-semibold">{activeTask.title}</h2>
-              <div className="flex items-center gap-2">
-                <Button variant="ghost" size="sm" onClick={handleStartEditing}>
-                  Edit
-                </Button>
-                <Button variant="ghost" size="sm" onClick={handleDeleteTask}>
-                  <Trash2 className="h-4 w-4 text-destructive" />
-                </Button>
-              </div>
-            </div>
-
-            {activeTask.description ? (
-              <div className="mt-2 text-muted-foreground prose prose-sm dark:prose-invert max-w-none">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>{activeTask.description}</ReactMarkdown>
-              </div>
-            ) : (
-              <p className="mt-2 text-muted-foreground italic text-sm">No description. Click Edit to add one.</p>
-            )}
-
-            <div className="mt-4 flex items-center gap-2">
-              <div className="flex items-center">
-                {activeTask.priority === "high" && <ArrowUpCircle className="h-4 w-4 text-destructive mr-1" />}
-                {activeTask.priority === "medium" && <ArrowRightCircle className="h-4 w-4 text-amber-500 mr-1" />}
-                {activeTask.priority === "low" && <ArrowDownCircle className="h-4 w-4 text-green-500 mr-1" />}
-                <span className="text-sm">
-                  {activeTask.priority.charAt(0).toUpperCase() + activeTask.priority.slice(1)} priority
-                </span>
-              </div>
-
-              <span className="text-muted-foreground text-sm">•</span>
-
-              <span className="text-sm text-muted-foreground">
-                Created {new Date(activeTask.createdAt).toLocaleDateString()}
-              </span>
-            </div>
-          </div>
-        )}
+          <span className="text-muted-foreground">
+            Created {new Date(activeTask.createdAt).toLocaleDateString()}
+          </span>
+        </div>
       </div>
 
-      <div className="flex-1 overflow-auto">
+      {/* Tabs for Subtasks and Reminders */}
+      <div className="flex-1 overflow-auto mt-4">
         <Tabs defaultValue="subtasks">
           <TabsList className="mb-4 w-full">
             <TabsTrigger value="subtasks" className="flex-1">
