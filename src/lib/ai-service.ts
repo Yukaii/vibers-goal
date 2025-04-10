@@ -48,9 +48,7 @@ export async function transcribeAudio(
       }
     }
     // Generic fallback error
-    throw new Error(
-      'Failed to transcribe audio due to an unexpected error.',
-    );
+    throw new Error('Failed to transcribe audio due to an unexpected error.');
   }
 }
 

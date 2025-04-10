@@ -76,7 +76,10 @@ export function useVoiceInput() {
         try {
           const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
           // Pass the API key from settings store
-          const text = await transcribeAudio(audioBlob, openaiApiKey ?? undefined);
+          const text = await transcribeAudio(
+            audioBlob,
+            openaiApiKey ?? undefined,
+          );
           setTranscript(text);
         } catch (error) {
           console.error('Error transcribing audio:', error);
