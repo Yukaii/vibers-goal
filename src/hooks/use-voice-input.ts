@@ -10,7 +10,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 // Check for SpeechRecognition API vendor prefixes
 // Use @ts-ignore to suppress potential TS errors for non-standard properties
-// biome-ignore lint/suspicious/noExplicitAny: Necessary for checking browser-specific APIs
 const SpeechRecognitionAPI =
   // @ts-ignore
   window.SpeechRecognition || window.webkitSpeechRecognition;

@@ -23,15 +23,16 @@ import {
   Trash2,
   XCircle,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { type RefObject, useEffect, useState } from 'react'; // Add RefObject
 import { ReminderSettings } from './reminder-settings';
-import { SubTaskList } from './subtask-list';
+import { SubTaskList, type SubtaskListHandle } from './subtask-list'; // Import handle type
 
 interface TaskDetailProps {
   onClose: () => void;
+  subtaskListRef: RefObject<SubtaskListHandle | null>; // Add ref prop
 }
 
-export function TaskDetail({ onClose }: TaskDetailProps) {
+export function TaskDetail({ onClose, subtaskListRef }: TaskDetailProps) {
   const activeTask = useTaskStore((state) => state.getActiveTask());
   const updateTask = useTaskStore((state) => state.updateTask);
   const deleteTask = useTaskStore((state) => state.deleteTask);
@@ -69,6 +70,7 @@ export function TaskDetail({ onClose }: TaskDetailProps) {
     } else if (e.key === 'Escape') {
       setCurrentTitle(activeTask.title); // Revert changes
       e.currentTarget.blur();
+      e.stopPropagation(); // Prevent event from bubbling up
     }
   };
 
@@ -88,6 +90,7 @@ export function TaskDetail({ onClose }: TaskDetailProps) {
     if (e.key === 'Escape') {
       setCurrentDescription(activeTask.description || ''); // Revert changes
       e.currentTarget.blur();
+      e.stopPropagation(); // Prevent event from bubbling up
     }
     // Allow saving with Cmd/Ctrl + Enter if desired in the future
     // if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
@@ -215,6 +218,7 @@ export function TaskDetail({ onClose }: TaskDetailProps) {
 
           <TabsContent value="subtasks" className="mt-0">
             <SubTaskList
+              ref={subtaskListRef} // Pass the ref down
               taskId={activeTask.id}
               subTasks={activeTask.subTasks}
             />
