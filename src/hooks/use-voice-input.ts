@@ -9,8 +9,10 @@ import {
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 // Check for SpeechRecognition API vendor prefixes
-// @ts-ignore - vendor prefix
+// Use @ts-ignore to suppress potential TS errors for non-standard properties
+// biome-ignore lint/suspicious/noExplicitAny: Necessary for checking browser-specific APIs
 const SpeechRecognitionAPI =
+  // @ts-ignore
   window.SpeechRecognition || window.webkitSpeechRecognition;
 
 // Define the interface for the SpeechRecognition event if needed, or use any
@@ -226,6 +228,9 @@ export function useVoiceInput() {
           } else if (event.error === 'not-allowed') {
             errorMessage =
               'Permission denied. Please allow microphone access in browser settings.';
+          } else if (event.error === 'network') {
+            errorMessage =
+              "Network error connecting to the browser's speech recognition service. Please check your internet connection or try a different browser/network."; // Updated message
           }
           alert(errorMessage);
           setIsListening(false);
