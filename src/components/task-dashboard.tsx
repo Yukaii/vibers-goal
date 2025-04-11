@@ -2,20 +2,20 @@
 
 import { Button } from '@/components/ui/button';
 import { Toaster } from '@/components/ui/toaster';
-import { useTaskStore } from '@/lib/store';
 import { useKeyboardCommands } from '@/hooks/use-keyboard-commands';
+import { Command } from '@/hooks/use-keyboard-commands'; // Import Command enum
+import { useTaskStore } from '@/lib/store';
 import { motion } from 'framer-motion';
 import { ArrowDown, EyeIcon, EyeOffIcon, SettingsIcon } from 'lucide-react';
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { CommandPalette } from './command-palette'; // Import CommandPalette
 import { KeyboardHelpModal } from './keyboard-help-modal';
 import { SettingsModal } from './settings-modal';
+import type { SubtaskListHandle } from './subtask-list';
 import { TaskDetail } from './task-detail';
 import { TaskInput } from './task-input';
 import { TaskList } from './task-list';
-import type { SubtaskListHandle } from './subtask-list';
 import { ThemeToggle } from './theme-toggle';
-import { Command } from '@/hooks/use-keyboard-commands'; // Import Command enum
 
 export function TaskDashboard() {
   const [showCompleted, setShowCompleted] = useState(false);
@@ -33,8 +33,7 @@ export function TaskDashboard() {
   const subtaskListHandleRef = useRef<SubtaskListHandle>(null); // Ref for SubtaskList handle
 
   // Filter tasks based on showCompleted for accurate indexing
-  const visibleTasks = tasks.filter(task => showCompleted || !task.completed);
-
+  const visibleTasks = tasks.filter((task) => showCompleted || !task.completed);
 
   // Check if this is the first visit
   useEffect(() => {
@@ -45,34 +44,36 @@ export function TaskDashboard() {
     }
   }, [tasks.length]);
 
-
   // --- Keyboard Command Actions ---
 
-  const handleNavigateList = useCallback((direction: 'up' | 'down') => {
-    setFocusedTaskIndex(prevIndex => {
-      const maxIndex = visibleTasks.length - 1;
-      if (maxIndex < 0) return null; // No tasks to navigate
+  const handleNavigateList = useCallback(
+    (direction: 'up' | 'down') => {
+      setFocusedTaskIndex((prevIndex) => {
+        const maxIndex = visibleTasks.length - 1;
+        if (maxIndex < 0) return null; // No tasks to navigate
 
-      let nextIndex: number | null;
+        let nextIndex: number | null;
 
-      if (prevIndex === null) {
-        // If nothing is focused, start from top (down) or bottom (up)
-        nextIndex = direction === 'down' ? 0 : maxIndex;
-      } else {
-        nextIndex = direction === 'down' ? prevIndex + 1 : prevIndex - 1;
-      }
+        if (prevIndex === null) {
+          // If nothing is focused, start from top (down) or bottom (up)
+          nextIndex = direction === 'down' ? 0 : maxIndex;
+        } else {
+          nextIndex = direction === 'down' ? prevIndex + 1 : prevIndex - 1;
+        }
 
-      // Clamp index within bounds
-      if (nextIndex < 0) nextIndex = 0; // Optionally wrap: maxIndex;
-      if (nextIndex > maxIndex) nextIndex = maxIndex; // Optionally wrap: 0;
+        // Clamp index within bounds
+        if (nextIndex < 0) nextIndex = 0; // Optionally wrap: maxIndex;
+        if (nextIndex > maxIndex) nextIndex = maxIndex; // Optionally wrap: 0;
 
-      // TODO: Scroll the focused item into view within TaskList
-      // This might require passing the ref and index to TaskList
-      // or having TaskList manage scrolling internally based on focusedIndex prop.
+        // TODO: Scroll the focused item into view within TaskList
+        // This might require passing the ref and index to TaskList
+        // or having TaskList manage scrolling internally based on focusedIndex prop.
 
-      return nextIndex;
-    });
-  }, [visibleTasks.length]);
+        return nextIndex;
+      });
+    },
+    [visibleTasks.length],
+  );
 
   const handleOpenDetail = useCallback(() => {
     if (focusedTaskIndex !== null && visibleTasks[focusedTaskIndex]) {
@@ -83,10 +84,14 @@ export function TaskDashboard() {
 
   const handleCloseDetail = useCallback(() => {
     // Find the index of the previously active task to restore focus
-    const previouslyFocusedIndex = visibleTasks.findIndex(task => task.id === activeTaskId);
+    const previouslyFocusedIndex = visibleTasks.findIndex(
+      (task) => task.id === activeTaskId,
+    );
     setActiveTaskId(null);
     // Restore focus to the list item if found, otherwise clear focus
-    setFocusedTaskIndex(previouslyFocusedIndex !== -1 ? previouslyFocusedIndex : null);
+    setFocusedTaskIndex(
+      previouslyFocusedIndex !== -1 ? previouslyFocusedIndex : null,
+    );
   }, [activeTaskId, setActiveTaskId, visibleTasks]);
 
   const handleFocusNewTask = useCallback(() => {
@@ -104,30 +109,39 @@ export function TaskDashboard() {
   }, []);
 
   // --- Command Palette Handler ---
-  const handleSelectCommand = useCallback((command: Command) => {
-    // Map command enum to the corresponding action handler
-    switch (command) {
-      case Command.FOCUS_NEW_TASK:
-        handleFocusNewTask();
-        break;
-      case Command.FOCUS_SUBTASK_INPUT:
-        // Only execute if detail view is open (context check)
-        if (activeTaskId) {
-          handleFocusSubtaskInput();
-        } else {
-          // Optional: Show a toast or message indicating context requirement
-          console.warn('Cannot focus subtask input: Task detail view is not open.');
-        }
-        break;
-      case Command.TOGGLE_HELP_MODAL:
-        handleToggleHelpModal();
-        break;
-      // Add cases for other commands as needed (e.g., settings, toggle completed)
-      default:
-        console.warn('Command not handled by palette:', command);
-    }
-  }, [activeTaskId, handleFocusNewTask, handleFocusSubtaskInput, handleToggleHelpModal]); // Add dependencies
-
+  const handleSelectCommand = useCallback(
+    (command: Command) => {
+      // Map command enum to the corresponding action handler
+      switch (command) {
+        case Command.FOCUS_NEW_TASK:
+          handleFocusNewTask();
+          break;
+        case Command.FOCUS_SUBTASK_INPUT:
+          // Only execute if detail view is open (context check)
+          if (activeTaskId) {
+            handleFocusSubtaskInput();
+          } else {
+            // Optional: Show a toast or message indicating context requirement
+            console.warn(
+              'Cannot focus subtask input: Task detail view is not open.',
+            );
+          }
+          break;
+        case Command.TOGGLE_HELP_MODAL:
+          handleToggleHelpModal();
+          break;
+        // Add cases for other commands as needed (e.g., settings, toggle completed)
+        default:
+          console.warn('Command not handled by palette:', command);
+      }
+    },
+    [
+      activeTaskId,
+      handleFocusNewTask,
+      handleFocusSubtaskInput,
+      handleToggleHelpModal,
+    ],
+  ); // Add dependencies
 
   // --- Initialize Keyboard Commands Hook ---
   useKeyboardCommands({
@@ -140,7 +154,6 @@ export function TaskDashboard() {
     onToggleHelpModal: handleToggleHelpModal,
     onFocusSubtaskInput: handleFocusSubtaskInput, // Pass the new handler
   });
-
 
   // Check if this is the first visit (original useEffect content)
   useEffect(() => {

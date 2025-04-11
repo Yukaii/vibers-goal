@@ -1,4 +1,3 @@
-import * as React from 'react';
 import {
   CommandDialog,
   CommandEmpty,
@@ -8,7 +7,14 @@ import {
   CommandList,
   CommandSeparator,
 } from '@/components/ui/command'; // Assuming command is already added via Shadcn CLI
-import { Command as CmdKIcon, HelpCircle, ListTodo, Plus, Subtitles } from 'lucide-react'; // Icons for commands
+import {
+  Command as CmdKIcon,
+  HelpCircle,
+  ListTodo,
+  Plus,
+  Subtitles,
+} from 'lucide-react'; // Icons for commands
+import * as React from 'react';
 
 // Re-use the Command enum from the hook
 import { Command } from '@/hooks/use-keyboard-commands';
@@ -72,7 +78,7 @@ export function CommandPalette({
     // Prevent Enter key from bubbling up and triggering global handlers
     // like opening task detail when a command is selected.
     if (e.key === 'Enter') {
-    //   e.stopPropagation();
+      //   e.stopPropagation();
     }
     // Allow other keys like Escape to bubble up to close the dialog
   };
@@ -94,7 +100,9 @@ export function CommandPalette({
                 <CommandItem
                   key={item.command}
                   value={item.label} // Use label for search matching
-                  onSelect={() => runCommand(() => onSelectCommand(item.command))}
+                  onSelect={() =>
+                    runCommand(() => onSelectCommand(item.command))
+                  }
                 >
                   <item.icon className="mr-2 h-4 w-4" />
                   <span>{item.label}</span>

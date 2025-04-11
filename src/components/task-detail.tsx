@@ -23,7 +23,7 @@ import {
   Trash2,
   XCircle,
 } from 'lucide-react';
-import { useEffect, useState, type RefObject } from 'react'; // Add RefObject
+import { type RefObject, useEffect, useState } from 'react'; // Add RefObject
 import { ReminderSettings } from './reminder-settings';
 import { SubTaskList, type SubtaskListHandle } from './subtask-list'; // Import handle type
 

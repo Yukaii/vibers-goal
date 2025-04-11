@@ -73,16 +73,19 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               placeholder="Enter your OpenAI API key"
               className="col-span-3"
             />
-             <p className="text-xs text-muted-foreground px-1 col-start-2 col-span-3">
-               Your API key is stored locally and only used for OpenAI requests.
-             </p>
+            <p className="text-xs text-muted-foreground px-1 col-start-2 col-span-3">
+              Your API key is stored locally and only used for OpenAI requests.
+            </p>
           </div>
 
-
           {/* Voice Input Provider Selection */}
-          <div className="grid grid-cols-4 items-start gap-x-4 gap-y-2 pt-4"> {/* Use gap-x-4 and gap-y-2 */}
+          <div className="grid grid-cols-4 items-start gap-x-4 gap-y-2 pt-4">
+            {' '}
+            {/* Use gap-x-4 and gap-y-2 */}
             <Label className="text-right col-span-1 pt-2">Voice Input</Label>
-            <div className="col-span-3"> {/* Wrap RadioGroup and description */}
+            <div className="col-span-3">
+              {' '}
+              {/* Wrap RadioGroup and description */}
               <RadioGroup
                 value={selectedProvider}
                 onValueChange={(value) =>
@@ -109,8 +112,11 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                   </Label>
                 </div>
               </RadioGroup>
-              <p className="text-xs text-muted-foreground pt-2"> {/* Indent description under RadioGroup */}
-                Web Speech API support varies by browser. Accuracy may differ from OpenAI.
+              <p className="text-xs text-muted-foreground pt-2">
+                {' '}
+                {/* Indent description under RadioGroup */}
+                Web Speech API support varies by browser. Accuracy may differ
+                from OpenAI.
               </p>
             </div>
           </div>

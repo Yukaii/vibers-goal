@@ -1,9 +1,9 @@
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from '@/components/ui/dialog';
 import { Kbd } from '@/components/ui/kbd'; // Assuming a Kbd component exists or we create one
 import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
@@ -46,7 +46,8 @@ export function KeyboardHelpModal({ isOpen, onClose }: KeyboardHelpModalProps) {
                       // Use the key itself as the key for this inner map
                       <span key={key}>
                         <Kbd>{key}</Kbd>
-                        {shortcut.keys.indexOf(key) < shortcut.keys.length - 1 && (
+                        {shortcut.keys.indexOf(key) <
+                          shortcut.keys.length - 1 && (
                           <span className="mx-1">or</span>
                         )}
                       </span>

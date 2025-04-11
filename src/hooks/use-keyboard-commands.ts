@@ -1,5 +1,5 @@
 import { useTaskStore } from '@/lib/store';
-import { useEffect, useCallback, type RefObject } from 'react';
+import { type RefObject, useCallback, useEffect } from 'react';
 
 // Define Command Identifiers
 export enum Command {
@@ -64,35 +64,36 @@ export function useKeyboardCommands({
         activeElement instanceof HTMLInputElement ||
         activeElement instanceof HTMLTextAreaElement ||
         activeElement instanceof HTMLSelectElement ||
-        (activeElement instanceof HTMLElement && activeElement.isContentEditable)
+        (activeElement instanceof HTMLElement &&
+          activeElement.isContentEditable)
       ) {
         // Allow Escape even in inputs if detail is open (original behavior)
         if (event.key === 'Escape' && activeTaskId) {
-           // Let the existing Escape handler in TaskDashboard handle this if needed,
-           // or call onCloseDetail directly if we consolidate logic here.
-           // For now, let's assume the original handler still exists or we call onCloseDetail.
-           // If we call it here, we need to prevent the default dashboard handler.
-           // Let's call it here for consolidation.
+          // Let the existing Escape handler in TaskDashboard handle this if needed,
+          // or call onCloseDetail directly if we consolidate logic here.
+          // For now, let's assume the original handler still exists or we call onCloseDetail.
+          // If we call it here, we need to prevent the default dashboard handler.
+          // Let's call it here for consolidation.
 
-           // --- START MODIFICATION ---
-           // Check if the focused element is the main task input
-           if (activeElement === taskInputRef.current) {
-             // If it is the main task input, do nothing special here,
-             // let the input handle Escape if needed (e.g., clear content).
-             // We just don't want to close the detail panel.
-             // We also don't preventDefault, allowing the input to handle Escape.
-             return;
-           }
-           // --- END MODIFICATION ---
+          // --- START MODIFICATION ---
+          // Check if the focused element is the main task input
+          if (activeElement === taskInputRef.current) {
+            // If it is the main task input, do nothing special here,
+            // let the input handle Escape if needed (e.g., clear content).
+            // We just don't want to close the detail panel.
+            // We also don't preventDefault, allowing the input to handle Escape.
+            return;
+          }
+          // --- END MODIFICATION ---
 
-           // If Escape is pressed and detail is open, and it's NOT the main input, close detail.
-           onCloseDetail();
-           event.preventDefault(); // Prevent potential double handling
-           return;
+          // If Escape is pressed and detail is open, and it's NOT the main input, close detail.
+          onCloseDetail();
+          event.preventDefault(); // Prevent potential double handling
+          return;
         }
         // Otherwise, ignore other commands when inputs are focused
         if (event.key !== 'Escape') {
-            return;
+          return;
         }
       }
 
@@ -119,9 +120,10 @@ export function useKeyboardCommands({
             break;
           case Command.OPEN_DETAIL:
             // Only open if detail view is not already open? Assumed handled by TaskList focus state.
-             if (!activeTaskId) { // Only trigger open if not already open
-               onOpenDetail();
-             }
+            if (!activeTaskId) {
+              // Only trigger open if not already open
+              onOpenDetail();
+            }
             break;
           case Command.CLOSE_DETAIL:
             if (activeTaskId) {
@@ -144,7 +146,16 @@ export function useKeyboardCommands({
         }
       }
     },
-    [activeTaskId, taskInputRef, onNavigateList, onOpenDetail, onCloseDetail, onFocusNewTask, onToggleHelpModal, onFocusSubtaskInput] // Add taskInputRef dependency
+    [
+      activeTaskId,
+      taskInputRef,
+      onNavigateList,
+      onOpenDetail,
+      onCloseDetail,
+      onFocusNewTask,
+      onToggleHelpModal,
+      onFocusSubtaskInput,
+    ], // Add taskInputRef dependency
   );
 
   useEffect(() => {

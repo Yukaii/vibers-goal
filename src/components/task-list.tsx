@@ -1,7 +1,5 @@
 'use client';
 
-import type React from 'react'; // Change back to type import
-import { useEffect, useRef } from 'react'; // Explicitly import hooks
 import { useTaskStore } from '@/lib/store';
 import type { Task } from '@/lib/types';
 import {
@@ -29,6 +27,8 @@ import {
   Circle,
   GripVertical,
 } from 'lucide-react';
+import type React from 'react'; // Change back to type import
+import { useEffect, useRef } from 'react'; // Explicitly import hooks
 
 interface TaskItemProps {
   task: Task;
@@ -38,7 +38,13 @@ interface TaskItemProps {
   isFocused: boolean; // Add isFocused prop
 }
 
-function TaskItem({ task, isActive, onSelect, onToggle, isFocused }: TaskItemProps) {
+function TaskItem({
+  task,
+  isActive,
+  onSelect,
+  onToggle,
+  isFocused,
+}: TaskItemProps) {
   const itemRef = useRef<HTMLLIElement>(null); // Ref for scrolling - Remove React. prefix
   const {
     attributes,
@@ -62,11 +68,12 @@ function TaskItem({ task, isActive, onSelect, onToggle, isFocused }: TaskItemPro
   };
 
   // Scroll into view when focused
-  useEffect(() => { // Remove React. prefix
+  useEffect(() => {
+    // Remove React. prefix
     if (isFocused && itemRef.current) {
       itemRef.current.scrollIntoView({
         behavior: 'smooth', // Optional: smooth scrolling
-        block: 'nearest',   // Adjust as needed ('start', 'center', 'end')
+        block: 'nearest', // Adjust as needed ('start', 'center', 'end')
       });
     }
   }, [isFocused]);
@@ -162,7 +169,11 @@ interface TaskListProps {
   focusedIndex: number | null; // Receive focused index
 }
 
-export function TaskList({ tasks, showCompleted, focusedIndex }: TaskListProps) {
+export function TaskList({
+  tasks,
+  showCompleted,
+  focusedIndex,
+}: TaskListProps) {
   // Remove internal task fetching: const tasks = useTaskStore((state) => state.tasks);
   const activeTaskId = useTaskStore((state) => state.activeTaskId);
   const setActiveTaskId = useTaskStore((state) => state.setActiveTaskId);
@@ -227,16 +238,21 @@ export function TaskList({ tasks, showCompleted, focusedIndex }: TaskListProps) 
         strategy={verticalListSortingStrategy}
       >
         <ul className="space-y-2">
-          {filteredTasks.map((task, index) => ( // Add index here
-            <TaskItem
-              key={task.id}
-              task={task}
-              isFocused={focusedIndex === index} // Calculate isFocused
-              isActive={activeTaskId === task.id}
-              onSelect={() => setActiveTaskId(task.id)}
-              onToggle={() => toggleTaskCompletion(task.id)}
-            />
-          ))}
+          {filteredTasks.map(
+            (
+              task,
+              index, // Add index here
+            ) => (
+              <TaskItem
+                key={task.id}
+                task={task}
+                isFocused={focusedIndex === index} // Calculate isFocused
+                isActive={activeTaskId === task.id}
+                onSelect={() => setActiveTaskId(task.id)}
+                onToggle={() => toggleTaskCompletion(task.id)}
+              />
+            ),
+          )}
         </ul>
       </SortableContext>
     </DndContext>
