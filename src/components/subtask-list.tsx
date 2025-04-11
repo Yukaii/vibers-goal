@@ -1,6 +1,7 @@
 'use client';
 
 import type React from 'react';
+import { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -42,7 +43,6 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
 
 interface SubTaskItemProps {
   taskId: string;
@@ -193,12 +193,19 @@ interface SubTaskListProps {
   subTasks: SubTask[];
 }
 
-export function SubTaskList({ taskId, subTasks }: SubTaskListProps) {
+// Define the handle type that will be exposed
+export interface SubtaskListHandle {
+  focusInput: () => void;
+}
+
+// Wrap component with forwardRef
+export const SubTaskList = forwardRef<SubtaskListHandle, SubTaskListProps>(({ taskId, subTasks }, ref) => {
   const [newSubTaskTitle, setNewSubTaskTitle] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [customPrompt, setCustomPrompt] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isAiOpen, setIsAiOpen] = useState(false);
+  const subtaskInputRef = useRef<HTMLInputElement>(null); // Ref for the input
 
   const addSubTask = useTaskStore((state) => state.addSubTask);
   const toggleSubTaskCompletion = useTaskStore(
@@ -221,6 +228,16 @@ export function SubTaskList({ taskId, subTasks }: SubTaskListProps) {
       coordinateGetter: sortableKeyboardCoordinates,
     }),
   );
+
+  // Expose the focusInput method using useImperativeHandle
+  useImperativeHandle(ref, () => ({
+    focusInput: () => {
+      window.setTimeout(() => {
+        console.log('Focusing input', subtaskInputRef.current);
+        subtaskInputRef.current?.focus();
+      }, 0);
+    }
+  }), []);
 
   const handleAddSubTask = () => {
     if (newSubTaskTitle.trim()) {
@@ -288,6 +305,7 @@ export function SubTaskList({ taskId, subTasks }: SubTaskListProps) {
     <div>
       <div className="flex gap-2 mb-4">
         <Input
+          ref={subtaskInputRef} // Assign the ref to the input
           value={newSubTaskTitle}
           onChange={(e) => setNewSubTaskTitle(e.target.value)}
           onKeyDown={handleKeyDown}
@@ -375,4 +393,7 @@ export function SubTaskList({ taskId, subTasks }: SubTaskListProps) {
       )}
     </div>
   );
-}
+});
+
+// Add display name for DevTools
+SubTaskList.displayName = 'SubTaskList';

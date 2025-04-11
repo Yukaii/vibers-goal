@@ -23,15 +23,16 @@ import {
   Trash2,
   XCircle,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type RefObject } from 'react'; // Add RefObject
 import { ReminderSettings } from './reminder-settings';
-import { SubTaskList } from './subtask-list';
+import { SubTaskList, type SubtaskListHandle } from './subtask-list'; // Import handle type
 
 interface TaskDetailProps {
   onClose: () => void;
+  subtaskListRef: RefObject<SubtaskListHandle | null>; // Add ref prop
 }
 
-export function TaskDetail({ onClose }: TaskDetailProps) {
+export function TaskDetail({ onClose, subtaskListRef }: TaskDetailProps) {
   const activeTask = useTaskStore((state) => state.getActiveTask());
   const updateTask = useTaskStore((state) => state.updateTask);
   const deleteTask = useTaskStore((state) => state.deleteTask);
@@ -217,6 +218,7 @@ export function TaskDetail({ onClose }: TaskDetailProps) {
 
           <TabsContent value="subtasks" className="mt-0">
             <SubTaskList
+              ref={subtaskListRef} // Pass the ref down
               taskId={activeTask.id}
               subTasks={activeTask.subTasks}
             />

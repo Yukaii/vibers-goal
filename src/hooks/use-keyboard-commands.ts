@@ -8,7 +8,8 @@ export enum Command {
   NAVIGATE_LIST_DOWN = 'NAVIGATE_LIST_DOWN',
   OPEN_DETAIL = 'OPEN_DETAIL',
   CLOSE_DETAIL = 'CLOSE_DETAIL',
-  TOGGLE_HELP_MODAL = 'TOGGLE_HELP_MODAL', // Add help command
+  TOGGLE_HELP_MODAL = 'TOGGLE_HELP_MODAL',
+  FOCUS_SUBTASK_INPUT = 'FOCUS_SUBTASK_INPUT', // Add subtask focus command
   // Add future commands here
 }
 
@@ -27,7 +28,8 @@ const keymap: { [key: string]: Command } = {
   h: Command.CLOSE_DETAIL,
   Escape: Command.CLOSE_DETAIL,
   '?': Command.TOGGLE_HELP_MODAL,
-  '/': Command.TOGGLE_HELP_MODAL, // Often used for help/search too
+  '/': Command.TOGGLE_HELP_MODAL,
+  s: Command.FOCUS_SUBTASK_INPUT, // Add 's' keybinding
 };
 
 interface UseKeyboardCommandsProps {
@@ -37,7 +39,8 @@ interface UseKeyboardCommandsProps {
   onOpenDetail: () => void;
   onCloseDetail: () => void;
   onFocusNewTask: () => void;
-  onToggleHelpModal: () => void; // Add prop for help modal
+  onToggleHelpModal: () => void;
+  onFocusSubtaskInput: () => void; // Add prop for subtask focus
 }
 
 export function useKeyboardCommands({
@@ -47,7 +50,8 @@ export function useKeyboardCommands({
   onOpenDetail,
   onCloseDetail,
   onFocusNewTask,
-  onToggleHelpModal, // Destructure new prop
+  onToggleHelpModal,
+  onFocusSubtaskInput, // Destructure new prop
 }: UseKeyboardCommandsProps) {
   const activeTaskId = useTaskStore((state) => state.activeTaskId);
 
@@ -69,6 +73,19 @@ export function useKeyboardCommands({
            // For now, let's assume the original handler still exists or we call onCloseDetail.
            // If we call it here, we need to prevent the default dashboard handler.
            // Let's call it here for consolidation.
+
+           // --- START MODIFICATION ---
+           // Check if the focused element is the main task input
+           if (activeElement === taskInputRef.current) {
+             // If it is the main task input, do nothing special here,
+             // let the input handle Escape if needed (e.g., clear content).
+             // We just don't want to close the detail panel.
+             // We also don't preventDefault, allowing the input to handle Escape.
+             return;
+           }
+           // --- END MODIFICATION ---
+
+           // If Escape is pressed and detail is open, and it's NOT the main input, close detail.
            onCloseDetail();
            event.preventDefault(); // Prevent potential double handling
            return;
@@ -114,6 +131,12 @@ export function useKeyboardCommands({
           case Command.TOGGLE_HELP_MODAL:
             onToggleHelpModal();
             break;
+          case Command.FOCUS_SUBTASK_INPUT:
+            // Only focus subtask if detail view is open
+            if (activeTaskId) {
+              onFocusSubtaskInput();
+            }
+            break;
           default:
             // Optional: Log unhandled commands
             console.warn('Unhandled command:', command);
@@ -121,7 +144,7 @@ export function useKeyboardCommands({
         }
       }
     },
-    [activeTaskId, onNavigateList, onOpenDetail, onCloseDetail, onFocusNewTask, onToggleHelpModal] // Add dependency
+    [activeTaskId, taskInputRef, onNavigateList, onOpenDetail, onCloseDetail, onFocusNewTask, onToggleHelpModal, onFocusSubtaskInput] // Add taskInputRef dependency
   );
 
   useEffect(() => {

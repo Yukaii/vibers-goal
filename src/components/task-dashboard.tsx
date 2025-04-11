@@ -7,11 +7,12 @@ import { useKeyboardCommands } from '@/hooks/use-keyboard-commands';
 import { motion } from 'framer-motion';
 import { ArrowDown, EyeIcon, EyeOffIcon, SettingsIcon } from 'lucide-react';
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { KeyboardHelpModal } from './keyboard-help-modal'; // Import help modal
+import { KeyboardHelpModal } from './keyboard-help-modal';
 import { SettingsModal } from './settings-modal';
 import { TaskDetail } from './task-detail';
 import { TaskInput } from './task-input';
 import { TaskList } from './task-list';
+import type { SubtaskListHandle } from './subtask-list'; // Use 'type' keyword
 import { ThemeToggle } from './theme-toggle';
 export function TaskDashboard() {
   const [showCompleted, setShowCompleted] = useState(false);
@@ -24,7 +25,8 @@ export function TaskDashboard() {
   const setActiveTaskId = useTaskStore((state) => state.setActiveTaskId);
 
   const taskInputRef = useRef<HTMLInputElement>(null);
-  const taskListRef = useRef<HTMLDivElement>(null); // Ref for TaskList container
+  const taskListRef = useRef<HTMLDivElement>(null);
+  const subtaskListHandleRef = useRef<SubtaskListHandle>(null); // Ref for SubtaskList handle
 
   // Filter tasks based on showCompleted for accurate indexing
   const visibleTasks = tasks.filter(task => showCompleted || !task.completed);
@@ -92,6 +94,11 @@ export function TaskDashboard() {
     setIsHelpModalOpen((prev) => !prev);
   }, []);
 
+  const handleFocusSubtaskInput = useCallback(() => {
+    // Call the focusInput method exposed by SubtaskList via the ref handle
+    subtaskListHandleRef.current?.focusInput();
+  }, []);
+
   // --- Initialize Keyboard Commands Hook ---
   useKeyboardCommands({
     taskInputRef,
@@ -100,7 +107,8 @@ export function TaskDashboard() {
     onOpenDetail: handleOpenDetail,
     onCloseDetail: handleCloseDetail,
     onFocusNewTask: handleFocusNewTask,
-    onToggleHelpModal: handleToggleHelpModal, // Pass the handler
+    onToggleHelpModal: handleToggleHelpModal,
+    onFocusSubtaskInput: handleFocusSubtaskInput, // Pass the new handler
   });
 
 
@@ -181,14 +189,22 @@ export function TaskDashboard() {
 
           {activeTaskId && (
             <div className="py-4 border-l pl-6 hidden md:block">
-              <TaskDetail onClose={() => setActiveTaskId(null)} />
+              {/* Pass the subtaskList ref handle to TaskDetail */}
+              <TaskDetail
+                subtaskListRef={subtaskListHandleRef}
+                onClose={() => setActiveTaskId(null)}
+              />
             </div>
           )}
 
           {activeTaskId && (
             <div className="fixed inset-0 z-50 md:hidden bg-background/80 backdrop-blur-sm">
               <div className="fixed inset-x-0 bottom-0 top-16 bg-background p-6 shadow-lg">
-                <TaskDetail onClose={() => setActiveTaskId(null)} />
+                {/* Pass the subtaskList ref handle to TaskDetail */}
+                <TaskDetail
+                  subtaskListRef={subtaskListHandleRef}
+                  onClose={() => setActiveTaskId(null)}
+                />
               </div>
             </div>
           )}

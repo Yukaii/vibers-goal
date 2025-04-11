@@ -21,6 +21,7 @@ const shortcuts = [
   { keys: ['k', '↑'], description: 'Navigate List Up' },
   { keys: ['l', 'Enter'], description: 'Open Task Detail / Edit' },
   { keys: ['h', 'Esc'], description: 'Close Task Detail' },
+  { keys: ['s'], description: 'Focus Add Subtask Input (in Detail View)' },
 ];
 
 export function KeyboardHelpModal({ isOpen, onClose }: KeyboardHelpModalProps) {
