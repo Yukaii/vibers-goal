@@ -8,6 +8,7 @@ export enum Command {
   NAVIGATE_LIST_DOWN = 'NAVIGATE_LIST_DOWN',
   OPEN_DETAIL = 'OPEN_DETAIL',
   CLOSE_DETAIL = 'CLOSE_DETAIL',
+  TOGGLE_HELP_MODAL = 'TOGGLE_HELP_MODAL', // Add help command
   // Add future commands here
 }
 
@@ -25,6 +26,8 @@ const keymap: { [key: string]: Command } = {
   Enter: Command.OPEN_DETAIL,
   h: Command.CLOSE_DETAIL,
   Escape: Command.CLOSE_DETAIL,
+  '?': Command.TOGGLE_HELP_MODAL,
+  '/': Command.TOGGLE_HELP_MODAL, // Often used for help/search too
 };
 
 interface UseKeyboardCommandsProps {
@@ -34,6 +37,7 @@ interface UseKeyboardCommandsProps {
   onOpenDetail: () => void;
   onCloseDetail: () => void;
   onFocusNewTask: () => void;
+  onToggleHelpModal: () => void; // Add prop for help modal
 }
 
 export function useKeyboardCommands({
@@ -43,6 +47,7 @@ export function useKeyboardCommands({
   onOpenDetail,
   onCloseDetail,
   onFocusNewTask,
+  onToggleHelpModal, // Destructure new prop
 }: UseKeyboardCommandsProps) {
   const activeTaskId = useTaskStore((state) => state.activeTaskId);
 
@@ -106,13 +111,17 @@ export function useKeyboardCommands({
               onCloseDetail();
             }
             break;
+          case Command.TOGGLE_HELP_MODAL:
+            onToggleHelpModal();
+            break;
           default:
             // Optional: Log unhandled commands
+            console.warn('Unhandled command:', command);
             break;
         }
       }
     },
-    [activeTaskId, onNavigateList, onOpenDetail, onCloseDetail, onFocusNewTask]
+    [activeTaskId, onNavigateList, onOpenDetail, onCloseDetail, onFocusNewTask, onToggleHelpModal] // Add dependency
   );
 
   useEffect(() => {

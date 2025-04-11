@@ -6,7 +6,8 @@ import { useTaskStore } from '@/lib/store';
 import { useKeyboardCommands } from '@/hooks/use-keyboard-commands';
 import { motion } from 'framer-motion';
 import { ArrowDown, EyeIcon, EyeOffIcon, SettingsIcon } from 'lucide-react';
-import { useEffect, useState, useCallback, useRef } from 'react'; // Added useRef
+import { useEffect, useState, useCallback, useRef } from 'react';
+import { KeyboardHelpModal } from './keyboard-help-modal'; // Import help modal
 import { SettingsModal } from './settings-modal';
 import { TaskDetail } from './task-detail';
 import { TaskInput } from './task-input';
@@ -16,7 +17,8 @@ export function TaskDashboard() {
   const [showCompleted, setShowCompleted] = useState(false);
   const [isFirstVisit, setIsFirstVisit] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
-  const [focusedTaskIndex, setFocusedTaskIndex] = useState<number | null>(null); // State for list navigation
+  const [isHelpModalOpen, setIsHelpModalOpen] = useState(false); // State for help modal
+  const [focusedTaskIndex, setFocusedTaskIndex] = useState<number | null>(null);
   const activeTaskId = useTaskStore((state) => state.activeTaskId);
   const tasks = useTaskStore((state) => state.tasks); // Assuming tasks are ordered as displayed
   const setActiveTaskId = useTaskStore((state) => state.setActiveTaskId);
@@ -86,6 +88,10 @@ export function TaskDashboard() {
     setFocusedTaskIndex(null); // Clear list focus when input gets focus
   }, []);
 
+  const handleToggleHelpModal = useCallback(() => {
+    setIsHelpModalOpen((prev) => !prev);
+  }, []);
+
   // --- Initialize Keyboard Commands Hook ---
   useKeyboardCommands({
     taskInputRef,
@@ -94,6 +100,7 @@ export function TaskDashboard() {
     onOpenDetail: handleOpenDetail,
     onCloseDetail: handleCloseDetail,
     onFocusNewTask: handleFocusNewTask,
+    onToggleHelpModal: handleToggleHelpModal, // Pass the handler
   });
 
 
@@ -199,6 +206,11 @@ export function TaskDashboard() {
       <SettingsModal // Added SettingsModal component instance
         isOpen={isSettingsModalOpen}
         onClose={() => setIsSettingsModalOpen(false)}
+      />
+      {/* Render Help Modal */}
+      <KeyboardHelpModal
+        isOpen={isHelpModalOpen}
+        onClose={() => setIsHelpModalOpen(false)}
       />
     </div>
   );
