@@ -3,10 +3,11 @@
 import { Button } from '@/components/ui/button';
 import { Toaster } from '@/components/ui/toaster';
 import { useTaskStore } from '@/lib/store';
+import { useKeyboardCommands } from '@/hooks/use-keyboard-commands';
 import { motion } from 'framer-motion';
-import { ArrowDown, EyeIcon, EyeOffIcon, SettingsIcon } from 'lucide-react'; // Added SettingsIcon
-import { useEffect, useState, useCallback } from 'react'; // Added useCallback
-import { SettingsModal } from './settings-modal'; // Added SettingsModal import
+import { ArrowDown, EyeIcon, EyeOffIcon, SettingsIcon } from 'lucide-react';
+import { useEffect, useState, useCallback, useRef } from 'react'; // Added useRef
+import { SettingsModal } from './settings-modal';
 import { TaskDetail } from './task-detail';
 import { TaskInput } from './task-input';
 import { TaskList } from './task-list';
@@ -14,10 +15,18 @@ import { ThemeToggle } from './theme-toggle';
 export function TaskDashboard() {
   const [showCompleted, setShowCompleted] = useState(false);
   const [isFirstVisit, setIsFirstVisit] = useState(false);
-  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false); // Added state for modal
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [focusedTaskIndex, setFocusedTaskIndex] = useState<number | null>(null); // State for list navigation
   const activeTaskId = useTaskStore((state) => state.activeTaskId);
-  const tasks = useTaskStore((state) => state.tasks);
+  const tasks = useTaskStore((state) => state.tasks); // Assuming tasks are ordered as displayed
   const setActiveTaskId = useTaskStore((state) => state.setActiveTaskId);
+
+  const taskInputRef = useRef<HTMLInputElement>(null);
+  const taskListRef = useRef<HTMLDivElement>(null); // Ref for TaskList container
+
+  // Filter tasks based on showCompleted for accurate indexing
+  const visibleTasks = tasks.filter(task => showCompleted || !task.completed);
+
 
   // Check if this is the first visit
   useEffect(() => {
@@ -28,34 +37,67 @@ export function TaskDashboard() {
     }
   }, [tasks.length]);
 
-  // Handle Escape key press to close detail panel
-  const handleKeyDown = useCallback(
-    (event: KeyboardEvent) => {
-      if (
-        event.key === 'Escape' &&
-        activeTaskId &&
-        !(
-          document.activeElement instanceof HTMLInputElement ||
-          document.activeElement instanceof HTMLTextAreaElement ||
-          document.activeElement instanceof HTMLSelectElement ||
-          (document.activeElement instanceof HTMLElement &&
-            document.activeElement.isContentEditable)
-        )
-      ) {
-        setActiveTaskId(null);
+
+  // --- Keyboard Command Actions ---
+
+  const handleNavigateList = useCallback((direction: 'up' | 'down') => {
+    setFocusedTaskIndex(prevIndex => {
+      const maxIndex = visibleTasks.length - 1;
+      if (maxIndex < 0) return null; // No tasks to navigate
+
+      let nextIndex: number | null;
+
+      if (prevIndex === null) {
+        // If nothing is focused, start from top (down) or bottom (up)
+        nextIndex = direction === 'down' ? 0 : maxIndex;
+      } else {
+        nextIndex = direction === 'down' ? prevIndex + 1 : prevIndex - 1;
       }
-    },
-    [activeTaskId, setActiveTaskId]
-  );
 
-  useEffect(() => {
-    document.addEventListener('keydown', handleKeyDown);
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [handleKeyDown]);
+      // Clamp index within bounds
+      if (nextIndex < 0) nextIndex = 0; // Optionally wrap: maxIndex;
+      if (nextIndex > maxIndex) nextIndex = maxIndex; // Optionally wrap: 0;
 
-  // Check if this is the first visit (moved original useEffect content here)
+      // TODO: Scroll the focused item into view within TaskList
+      // This might require passing the ref and index to TaskList
+      // or having TaskList manage scrolling internally based on focusedIndex prop.
+
+      return nextIndex;
+    });
+  }, [visibleTasks.length]);
+
+  const handleOpenDetail = useCallback(() => {
+    if (focusedTaskIndex !== null && visibleTasks[focusedTaskIndex]) {
+      setActiveTaskId(visibleTasks[focusedTaskIndex].id);
+      setFocusedTaskIndex(null); // Clear list focus when detail opens
+    }
+  }, [focusedTaskIndex, visibleTasks, setActiveTaskId]);
+
+  const handleCloseDetail = useCallback(() => {
+    // Find the index of the previously active task to restore focus
+    const previouslyFocusedIndex = visibleTasks.findIndex(task => task.id === activeTaskId);
+    setActiveTaskId(null);
+    // Restore focus to the list item if found, otherwise clear focus
+    setFocusedTaskIndex(previouslyFocusedIndex !== -1 ? previouslyFocusedIndex : null);
+  }, [activeTaskId, setActiveTaskId, visibleTasks]);
+
+  const handleFocusNewTask = useCallback(() => {
+    taskInputRef.current?.focus();
+    setFocusedTaskIndex(null); // Clear list focus when input gets focus
+  }, []);
+
+  // --- Initialize Keyboard Commands Hook ---
+  useKeyboardCommands({
+    taskInputRef,
+    taskListRef, // Pass the ref
+    onNavigateList: handleNavigateList,
+    onOpenDetail: handleOpenDetail,
+    onCloseDetail: handleCloseDetail,
+    onFocusNewTask: handleFocusNewTask,
+  });
+
+
+  // Check if this is the first visit (original useEffect content)
   useEffect(() => {
     const hasVisitedBefore = localStorage.getItem('hasVisitedBefore');
     if (!hasVisitedBefore && tasks.length === 0) {
@@ -120,7 +162,14 @@ export function TaskDashboard() {
               </motion.div>
             )}
 
-            <TaskList showCompleted={showCompleted} />
+            {/* Pass ref, tasks, and focused index to TaskList */}
+            <div ref={taskListRef}>
+              <TaskList
+                tasks={visibleTasks}
+                showCompleted={showCompleted}
+                focusedIndex={focusedTaskIndex}
+              />
+            </div>
           </div>
 
           {activeTaskId && (
@@ -139,9 +188,10 @@ export function TaskDashboard() {
         </div>
       </div>
 
+      {/* Pass ref to TaskInput */}
       <div className="sticky bottom-0 border-t bg-background py-3 px-4">
         <div className="container mx-auto max-w-2xl">
-          <TaskInput />
+          <TaskInput ref={taskInputRef} />
         </div>
       </div>
 

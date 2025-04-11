@@ -1,5 +1,7 @@
 'use client';
 
+import type React from 'react'; // Change back to type import
+import { useEffect, useRef } from 'react'; // Explicitly import hooks
 import { useTaskStore } from '@/lib/store';
 import type { Task } from '@/lib/types';
 import {
@@ -33,9 +35,11 @@ interface TaskItemProps {
   isActive: boolean;
   onSelect: () => void;
   onToggle: () => void;
+  isFocused: boolean; // Add isFocused prop
 }
 
-function TaskItem({ task, isActive, onSelect, onToggle }: TaskItemProps) {
+function TaskItem({ task, isActive, onSelect, onToggle, isFocused }: TaskItemProps) {
+  const itemRef = useRef<HTMLLIElement>(null); // Ref for scrolling - Remove React. prefix
   const {
     attributes,
     listeners,
@@ -57,6 +61,22 @@ function TaskItem({ task, isActive, onSelect, onToggle }: TaskItemProps) {
     opacity: isDragging ? 0.5 : 1,
   };
 
+  // Scroll into view when focused
+  useEffect(() => { // Remove React. prefix
+    if (isFocused && itemRef.current) {
+      itemRef.current.scrollIntoView({
+        behavior: 'smooth', // Optional: smooth scrolling
+        block: 'nearest',   // Adjust as needed ('start', 'center', 'end')
+      });
+    }
+  }, [isFocused]);
+
+  // Combine refs for dnd-kit and scrolling
+  const combinedRef = (node: HTMLLIElement | null) => {
+    setNodeRef(node);
+    itemRef.current = node;
+  };
+
   const getPriorityIcon = (priority: Task['priority']) => {
     switch (priority) {
       case 'high':
@@ -76,14 +96,15 @@ function TaskItem({ task, isActive, onSelect, onToggle }: TaskItemProps) {
 
   return (
     <li
-      ref={setNodeRef}
+      ref={combinedRef} // Use combined ref
       style={style}
       data-task-id={task.id}
       className={`
-        p-3 border rounded-lg cursor-pointer transition-colors
+        p-3 border rounded-lg cursor-pointer transition-all duration-100 ease-in-out
         ${task.completed ? 'bg-muted/50' : 'bg-card hover:bg-accent/50'}
         ${isActive ? 'ring-2 ring-primary border-transparent' : ''}
-        ${isDragging ? 'z-10' : ''}
+        ${isFocused ? 'ring-2 ring-accent-foreground border-transparent outline-none' : ''} // Add focus style
+        ${isDragging ? 'z-10 shadow-lg' : ''}
       `}
       onClick={onSelect}
       onKeyDown={handleKeyDown}
@@ -136,21 +157,23 @@ function TaskItem({ task, isActive, onSelect, onToggle }: TaskItemProps) {
 }
 
 interface TaskListProps {
+  tasks: Task[]; // Receive tasks as prop
   showCompleted: boolean;
+  focusedIndex: number | null; // Receive focused index
 }
 
-export function TaskList({ showCompleted }: TaskListProps) {
-  const tasks = useTaskStore((state) => state.tasks);
+export function TaskList({ tasks, showCompleted, focusedIndex }: TaskListProps) {
+  // Remove internal task fetching: const tasks = useTaskStore((state) => state.tasks);
   const activeTaskId = useTaskStore((state) => state.activeTaskId);
   const setActiveTaskId = useTaskStore((state) => state.setActiveTaskId);
   const toggleTaskCompletion = useTaskStore(
     (state) => state.toggleTaskCompletion,
   );
   const reorderTasks = useTaskStore((state) => state.reorderTasks);
+  const allTasks = useTaskStore((state) => state.tasks); // Still need all tasks for reordering logic
 
-  const filteredTasks = showCompleted
-    ? tasks
-    : tasks.filter((task) => !task.completed);
+  // Use the passed 'tasks' prop which is already filtered in TaskDashboard
+  const filteredTasks = tasks;
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -168,8 +191,9 @@ export function TaskList({ showCompleted }: TaskListProps) {
 
     // Add null check for 'over' which might be null if dropped outside a droppable area
     if (over && active.id !== over.id) {
-      const oldIndex = tasks.findIndex((task) => task.id === active.id);
-      const newIndex = tasks.findIndex((task) => task.id === over.id);
+      // Use allTasks for finding original indices
+      const oldIndex = allTasks.findIndex((task) => task.id === active.id);
+      const newIndex = allTasks.findIndex((task) => task.id === over.id);
 
       // Ensure indices are valid before reordering
       if (oldIndex !== -1 && newIndex !== -1) {
@@ -203,10 +227,11 @@ export function TaskList({ showCompleted }: TaskListProps) {
         strategy={verticalListSortingStrategy}
       >
         <ul className="space-y-2">
-          {filteredTasks.map((task) => (
+          {filteredTasks.map((task, index) => ( // Add index here
             <TaskItem
               key={task.id}
               task={task}
+              isFocused={focusedIndex === index} // Calculate isFocused
               isActive={activeTaskId === task.id}
               onSelect={() => setActiveTaskId(task.id)}
               onToggle={() => toggleTaskCompletion(task.id)}

@@ -1,6 +1,6 @@
 'use client';
 
-import type React from 'react';
+import React, { useEffect, useRef, useState } from 'react'; // Add hooks back
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,13 +21,18 @@ import {
   Mic,
   Send,
 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+// useEffect, useRef, useState are now available via React import
 
-export function TaskInput() {
+// Define props if any are needed besides the ref (none currently)
+// interface TaskInputProps {}
+
+// Use forwardRef directly
+export const TaskInput = React.forwardRef<HTMLInputElement /*, TaskInputProps*/>((props, ref) => {
   const [taskText, setTaskText] = useState('');
   const [priority, setPriority] = useState<Priority>('medium');
   const [open, setOpen] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
+  // Use the forwarded ref for the input element
+  // const internalInputRef = useRef<HTMLInputElement>(null); // Keep internal ref if needed for other logic
   const micButtonRef = useRef<HTMLButtonElement>(null);
   const addTask = useTaskStore((state) => state.addTask);
 
@@ -157,7 +162,7 @@ export function TaskInput() {
 
       <div className="flex-1 relative">
         <Input
-          ref={inputRef}
+          ref={ref} // Assign the forwarded ref here
           value={taskText}
           onChange={(e) => setTaskText(e.target.value)}
           onKeyDown={handleKeyDown}
@@ -217,4 +222,6 @@ export function TaskInput() {
       )}
     </div>
   );
-}
+});
+
+TaskInput.displayName = 'TaskInput'; // Add display name for DevTools
