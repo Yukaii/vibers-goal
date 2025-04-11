@@ -15,6 +15,7 @@ interface KeyboardHelpModalProps {
 
 // Define shortcuts here for display
 const shortcuts = [
+  { keys: ['Cmd/Ctrl + K'], description: 'Open Command Palette' },
   { keys: ['?', '/'], description: 'Toggle Keyboard Shortcuts Help' },
   { keys: ['n', 'Cmd/Ctrl + N'], description: 'Focus New Task Input' },
   { keys: ['j', '↓'], description: 'Navigate List Down' },

@@ -233,7 +233,6 @@ export const SubTaskList = forwardRef<SubtaskListHandle, SubTaskListProps>(({ ta
   useImperativeHandle(ref, () => ({
     focusInput: () => {
       window.setTimeout(() => {
-        console.log('Focusing input', subtaskInputRef.current);
         subtaskInputRef.current?.focus();
       }, 0);
     }
@@ -250,6 +249,13 @@ export const SubTaskList = forwardRef<SubtaskListHandle, SubTaskListProps>(({ ta
     if (e.key === 'Enter') {
       e.preventDefault();
       handleAddSubTask();
+    } else if (e.key === 'Escape') {
+      // Stop Escape from bubbling up and closing the TaskDetail modal
+      e.stopPropagation();
+      // Unfocus the input using the ref
+      subtaskInputRef.current?.blur();
+      // Optionally, clear the input on Escape:
+      // setNewSubTaskTitle('');
     }
   };
 

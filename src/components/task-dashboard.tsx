@@ -7,18 +7,22 @@ import { useKeyboardCommands } from '@/hooks/use-keyboard-commands';
 import { motion } from 'framer-motion';
 import { ArrowDown, EyeIcon, EyeOffIcon, SettingsIcon } from 'lucide-react';
 import { useEffect, useState, useCallback, useRef } from 'react';
+import { CommandPalette } from './command-palette'; // Import CommandPalette
 import { KeyboardHelpModal } from './keyboard-help-modal';
 import { SettingsModal } from './settings-modal';
 import { TaskDetail } from './task-detail';
 import { TaskInput } from './task-input';
 import { TaskList } from './task-list';
-import type { SubtaskListHandle } from './subtask-list'; // Use 'type' keyword
+import type { SubtaskListHandle } from './subtask-list';
 import { ThemeToggle } from './theme-toggle';
+import { Command } from '@/hooks/use-keyboard-commands'; // Import Command enum
+
 export function TaskDashboard() {
   const [showCompleted, setShowCompleted] = useState(false);
   const [isFirstVisit, setIsFirstVisit] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
-  const [isHelpModalOpen, setIsHelpModalOpen] = useState(false); // State for help modal
+  const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false); // State for command palette
   const [focusedTaskIndex, setFocusedTaskIndex] = useState<number | null>(null);
   const activeTaskId = useTaskStore((state) => state.activeTaskId);
   const tasks = useTaskStore((state) => state.tasks); // Assuming tasks are ordered as displayed
@@ -98,6 +102,32 @@ export function TaskDashboard() {
     // Call the focusInput method exposed by SubtaskList via the ref handle
     subtaskListHandleRef.current?.focusInput();
   }, []);
+
+  // --- Command Palette Handler ---
+  const handleSelectCommand = useCallback((command: Command) => {
+    // Map command enum to the corresponding action handler
+    switch (command) {
+      case Command.FOCUS_NEW_TASK:
+        handleFocusNewTask();
+        break;
+      case Command.FOCUS_SUBTASK_INPUT:
+        // Only execute if detail view is open (context check)
+        if (activeTaskId) {
+          handleFocusSubtaskInput();
+        } else {
+          // Optional: Show a toast or message indicating context requirement
+          console.warn('Cannot focus subtask input: Task detail view is not open.');
+        }
+        break;
+      case Command.TOGGLE_HELP_MODAL:
+        handleToggleHelpModal();
+        break;
+      // Add cases for other commands as needed (e.g., settings, toggle completed)
+      default:
+        console.warn('Command not handled by palette:', command);
+    }
+  }, [activeTaskId, handleFocusNewTask, handleFocusSubtaskInput, handleToggleHelpModal]); // Add dependencies
+
 
   // --- Initialize Keyboard Commands Hook ---
   useKeyboardCommands({
@@ -227,6 +257,12 @@ export function TaskDashboard() {
       <KeyboardHelpModal
         isOpen={isHelpModalOpen}
         onClose={() => setIsHelpModalOpen(false)}
+      />
+      {/* Render Command Palette */}
+      <CommandPalette
+        isOpen={isCommandPaletteOpen}
+        onOpenChange={setIsCommandPaletteOpen}
+        onSelectCommand={handleSelectCommand}
       />
     </div>
   );
