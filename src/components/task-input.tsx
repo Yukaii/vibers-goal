@@ -31,8 +31,8 @@ export const TaskInput = React.forwardRef<HTMLInputElement /*, TaskInputProps*/>
   const [taskText, setTaskText] = useState('');
   const [priority, setPriority] = useState<Priority>('medium');
   const [open, setOpen] = useState(false);
+  const [isComposing, setIsComposing] = useState(false); // Add composition state
   // Use the forwarded ref for the input element
-  // const internalInputRef = useRef<HTMLInputElement>(null); // Keep internal ref if needed for other logic
   const micButtonRef = useRef<HTMLButtonElement>(null);
   const addTask = useTaskStore((state) => state.addTask);
 
@@ -61,10 +61,23 @@ export const TaskInput = React.forwardRef<HTMLInputElement /*, TaskInputProps*/>
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
+    // Prevent submission if IME composition is active
+    if (e.key === 'Enter' && !isComposing) {
       e.preventDefault();
       handleSubmit();
     }
+    // Note: Escape key is handled globally by useKeyboardCommands now,
+    // unless we want specific behavior here like clearing the input.
+  };
+
+  const handleCompositionStart = () => {
+    setIsComposing(true);
+  };
+
+  const handleCompositionEnd = () => {
+    setIsComposing(false);
+    // Optionally trigger submit if Enter was pressed during composition,
+    // but usually better to require a separate Enter press after composition ends.
   };
 
   const handlePrioritySelect = (value: Priority) => {
@@ -162,10 +175,12 @@ export const TaskInput = React.forwardRef<HTMLInputElement /*, TaskInputProps*/>
 
       <div className="flex-1 relative">
         <Input
-          ref={ref} // Assign the forwarded ref here
+          ref={ref}
           value={taskText}
           onChange={(e) => setTaskText(e.target.value)}
           onKeyDown={handleKeyDown}
+          onCompositionStart={handleCompositionStart} // Add handler
+          onCompositionEnd={handleCompositionEnd}     // Add handler
           placeholder="Add a new task..."
           className="pr-16"
           disabled={isListening}

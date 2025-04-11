@@ -205,7 +205,8 @@ export const SubTaskList = forwardRef<SubtaskListHandle, SubTaskListProps>(({ ta
   const [customPrompt, setCustomPrompt] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isAiOpen, setIsAiOpen] = useState(false);
-  const subtaskInputRef = useRef<HTMLInputElement>(null); // Ref for the input
+  const [isComposing, setIsComposing] = useState(false); // Add composition state
+  const subtaskInputRef = useRef<HTMLInputElement>(null);
 
   const addSubTask = useTaskStore((state) => state.addSubTask);
   const toggleSubTaskCompletion = useTaskStore(
@@ -246,7 +247,8 @@ export const SubTaskList = forwardRef<SubtaskListHandle, SubTaskListProps>(({ ta
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
+    // Prevent submission if IME composition is active
+    if (e.key === 'Enter' && !isComposing) {
       e.preventDefault();
       handleAddSubTask();
     } else if (e.key === 'Escape') {
@@ -257,6 +259,14 @@ export const SubTaskList = forwardRef<SubtaskListHandle, SubTaskListProps>(({ ta
       // Optionally, clear the input on Escape:
       // setNewSubTaskTitle('');
     }
+  };
+
+  const handleCompositionStart = () => {
+    setIsComposing(true);
+  };
+
+  const handleCompositionEnd = () => {
+    setIsComposing(false);
   };
 
   const handleGenerateBreakdown = async () => {
@@ -311,10 +321,12 @@ export const SubTaskList = forwardRef<SubtaskListHandle, SubTaskListProps>(({ ta
     <div>
       <div className="flex gap-2 mb-4">
         <Input
-          ref={subtaskInputRef} // Assign the ref to the input
+          ref={subtaskInputRef}
           value={newSubTaskTitle}
           onChange={(e) => setNewSubTaskTitle(e.target.value)}
           onKeyDown={handleKeyDown}
+          onCompositionStart={handleCompositionStart} // Add handler
+          onCompositionEnd={handleCompositionEnd}     // Add handler
           placeholder="Add a subtask..."
           className="flex-1"
         />
