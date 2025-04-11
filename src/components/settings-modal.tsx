@@ -11,31 +11,45 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'; // Import RadioGroup
 import { useToast } from '@/components/ui/use-toast';
-import { useSettingsStore } from '@/lib/settings-store';
+import {
+  type VoiceInputProvider,
+  useSettingsStore,
+} from '@/lib/settings-store'; // Import store items
 import { useEffect, useState } from 'react';
 
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
-}
+} // Add missing closing brace
 
 export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
-  const { openaiApiKey, setOpenaiApiKey } = useSettingsStore();
+  const {
+    openaiApiKey,
+    setOpenaiApiKey,
+    voiceInputProvider,
+    setVoiceInputProvider,
+  } = useSettingsStore();
   const [apiKeyInput, setApiKeyInput] = useState('');
+  // Local state for the radio group selection
+  const [selectedProvider, setSelectedProvider] =
+    useState<VoiceInputProvider>(voiceInputProvider);
   const { toast } = useToast();
 
   useEffect(() => {
     if (isOpen) {
       setApiKeyInput(openaiApiKey || '');
+      setSelectedProvider(voiceInputProvider); // Initialize local state on open
     }
-  }, [isOpen, openaiApiKey]);
+  }, [isOpen, openaiApiKey, voiceInputProvider]);
 
   const handleSave = () => {
     setOpenaiApiKey(apiKeyInput.trim() || null);
+    setVoiceInputProvider(selectedProvider); // Save selected provider
     toast({
       title: 'Settings Saved',
-      description: 'Your OpenAI API key has been updated.',
+      description: 'Your settings have been updated.', // More generic message
     });
     onClose();
   };
@@ -59,13 +73,50 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               placeholder="Enter your OpenAI API key"
               className="col-span-3"
             />
+             <p className="text-xs text-muted-foreground px-1 col-start-2 col-span-3">
+               Your API key is stored locally and only used for OpenAI requests.
+             </p>
           </div>
-          <p className="text-xs text-muted-foreground px-1">
-            Your API key is stored locally in your browser and never sent to our
-            servers except when making requests directly to OpenAI.
-          </p>
+
+
+          {/* Voice Input Provider Selection */}
+          <div className="grid grid-cols-4 items-start gap-x-4 gap-y-2 pt-4"> {/* Use gap-x-4 and gap-y-2 */}
+            <Label className="text-right col-span-1 pt-2">Voice Input</Label>
+            <div className="col-span-3"> {/* Wrap RadioGroup and description */}
+              <RadioGroup
+                value={selectedProvider}
+                onValueChange={(value) =>
+                  setSelectedProvider(value as VoiceInputProvider)
+                }
+                className="flex flex-col space-y-2"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="auto" id="r-auto" />
+                  <Label htmlFor="r-auto" className="font-normal">
+                    Auto (OpenAI if key set, else Web Speech)
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="openai" id="r-openai" />
+                  <Label htmlFor="r-openai" className="font-normal">
+                    OpenAI (Requires API Key)
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="webspeech" id="r-webspeech" />
+                  <Label htmlFor="r-webspeech" className="font-normal">
+                    Web Speech API (Browser Built-in)
+                  </Label>
+                </div>
+              </RadioGroup>
+              <p className="text-xs text-muted-foreground pt-2"> {/* Indent description under RadioGroup */}
+                Web Speech API support varies by browser. Accuracy may differ from OpenAI.
+              </p>
+            </div>
+          </div>
+          {/* Removed the standalone p tag from here */}
         </div>
-        <DialogFooter className='gap-2'>
+        <DialogFooter className="gap-2">
           <DialogClose asChild>
             <Button type="button" variant="outline">
               Cancel
