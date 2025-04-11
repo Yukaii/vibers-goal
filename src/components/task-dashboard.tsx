@@ -5,7 +5,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { useTaskStore } from '@/lib/store';
 import { motion } from 'framer-motion';
 import { ArrowDown, EyeIcon, EyeOffIcon, SettingsIcon } from 'lucide-react'; // Added SettingsIcon
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react'; // Added useCallback
 import { SettingsModal } from './settings-modal'; // Added SettingsModal import
 import { TaskDetail } from './task-detail';
 import { TaskInput } from './task-input';
@@ -20,6 +20,42 @@ export function TaskDashboard() {
   const setActiveTaskId = useTaskStore((state) => state.setActiveTaskId);
 
   // Check if this is the first visit
+  useEffect(() => {
+    const hasVisitedBefore = localStorage.getItem('hasVisitedBefore');
+    if (!hasVisitedBefore && tasks.length === 0) {
+      setIsFirstVisit(true);
+      localStorage.setItem('hasVisitedBefore', 'true');
+    }
+  }, [tasks.length]);
+
+  // Handle Escape key press to close detail panel
+  const handleKeyDown = useCallback(
+    (event: KeyboardEvent) => {
+      if (
+        event.key === 'Escape' &&
+        activeTaskId &&
+        !(
+          document.activeElement instanceof HTMLInputElement ||
+          document.activeElement instanceof HTMLTextAreaElement ||
+          document.activeElement instanceof HTMLSelectElement ||
+          (document.activeElement instanceof HTMLElement &&
+            document.activeElement.isContentEditable)
+        )
+      ) {
+        setActiveTaskId(null);
+      }
+    },
+    [activeTaskId, setActiveTaskId]
+  );
+
+  useEffect(() => {
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [handleKeyDown]);
+
+  // Check if this is the first visit (moved original useEffect content here)
   useEffect(() => {
     const hasVisitedBefore = localStorage.getItem('hasVisitedBefore');
     if (!hasVisitedBefore && tasks.length === 0) {

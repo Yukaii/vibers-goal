@@ -69,6 +69,7 @@ export function TaskDetail({ onClose }: TaskDetailProps) {
     } else if (e.key === 'Escape') {
       setCurrentTitle(activeTask.title); // Revert changes
       e.currentTarget.blur();
+      e.stopPropagation(); // Prevent event from bubbling up
     }
   };
 
@@ -88,6 +89,7 @@ export function TaskDetail({ onClose }: TaskDetailProps) {
     if (e.key === 'Escape') {
       setCurrentDescription(activeTask.description || ''); // Revert changes
       e.currentTarget.blur();
+      e.stopPropagation(); // Prevent event from bubbling up
     }
     // Allow saving with Cmd/Ctrl + Enter if desired in the future
     // if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
