@@ -5,12 +5,9 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-  CommandSeparator,
 } from '@/components/ui/command'; // Assuming command is already added via Shadcn CLI
 import {
-  Command as CmdKIcon,
   HelpCircle,
-  ListTodo,
   Plus,
   Subtitles,
 } from 'lucide-react'; // Icons for commands
