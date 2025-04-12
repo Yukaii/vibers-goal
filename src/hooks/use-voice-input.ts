@@ -52,6 +52,7 @@ export function useVoiceInput() {
   const [isProcessing, setIsProcessing] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const recognitionRef = useRef<ISpeechRecognition | null>(null); // Use the defined interface
+  const [, setAudioChunks] = useState<Blob[]>([]); // State for audio data chunks
   const [isPushToTalk, setIsPushToTalk] = useState(false);
   const touchStartTimeRef = useRef<number | null>(null);
   const [isApiAvailable, setIsApiAvailable] = useState(false); // Track if the *selected* voice input method is available
@@ -126,7 +127,7 @@ export function useVoiceInput() {
 
         recorder.ondataavailable = (e) => {
           if (e.data.size > 0) {
-            // setAudioChunks((prevChunks) => [...prevChunks, e.data]);
+            setAudioChunks((prevChunks) => [...prevChunks, e.data]);
           }
         };
 
@@ -145,40 +146,39 @@ export function useVoiceInput() {
           if (isTooShort) {
             console.log('Recording too short (OpenAI), discarding.');
             setIsProcessing(false);
-            // setAudioChunks([]);
+            setAudioChunks([]);
             return;
           }
 
-          // setAudioChunks((currentAudioChunks) => {
-          const currentAudioChunks: Blob[] = []; // Replaced with local variable
-          if (currentAudioChunks.length > 0) {
-            console.log(
-              `Processing ${currentAudioChunks.length} audio chunks (OpenAI).`,
-            );
-            (async () => {
-              try {
-                const audioBlob = new Blob(currentAudioChunks, {
-                  type: 'audio/webm',
-                });
-                const text = await transcribeAudio(
-                  audioBlob,
-                  openaiApiKey ?? undefined,
-                );
-                console.log('OpenAI Transcription result:', text);
-                setTranscript(text);
-              } catch (error) {
-                console.error('Error transcribing audio (OpenAI):', error);
-                alert('Failed to transcribe audio. Please try again.');
-              } finally {
-                setIsProcessing(false);
-              }
-            })();
-          } else {
-            console.log('No audio chunks to process (OpenAI).');
-            setIsProcessing(false);
-          }
-          // return []; // Clear chunks
-          // });
+          setAudioChunks((currentAudioChunks) => {
+            if (currentAudioChunks.length > 0) {
+              console.log(
+                `Processing ${currentAudioChunks.length} audio chunks (OpenAI).`,
+              );
+              (async () => {
+                try {
+                  const audioBlob = new Blob(currentAudioChunks, {
+                    type: 'audio/webm',
+                  });
+                  const text = await transcribeAudio(
+                    audioBlob,
+                    openaiApiKey ?? undefined,
+                  );
+                  console.log('OpenAI Transcription result:', text);
+                  setTranscript(text);
+                } catch (error) {
+                  console.error('Error transcribing audio (OpenAI):', error);
+                  alert('Failed to transcribe audio. Please try again.');
+                } finally {
+                  setIsProcessing(false);
+                }
+              })();
+            } else {
+              console.log('No audio chunks to process (OpenAI).');
+              setIsProcessing(false);
+            }
+            return []; // Clear chunks
+          });
         };
 
         recorder.start();
